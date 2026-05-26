@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.psychosim.client.controller.LoginController"
+           styleClass="login-root">
+
+    <VBox alignment="CENTER" spacing="0" maxWidth="400">
+        <VBox styleClass="login-card" spacing="20">
+            <Label text="PsychoSim" styleClass="brand-title"/>
+            <Label text="Gamificación en Psicología Social" styleClass="brand-subtitle"/>
+
+            <VBox spacing="8">
+                <Label text="Correo institucional" styleClass="field-label"/>
+                <TextField fx:id="emailField" promptText="usuario@universidad.edu.co"
+                           styleClass="text-field"/>
+            </VBox>
+
+            <VBox spacing="8">
+                <Label text="Contraseña" styleClass="field-label"/>
+                <PasswordField fx:id="passwordField" promptText="••••••••"
+                               styleClass="text-field"/>
+            </VBox>
+
+            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true"/>
+
+            <Button fx:id="loginButton" text="Ingresar" onAction="#onLogin"
+                    styleClass="primary-button" maxWidth="Infinity"/>
+
+            <HBox alignment="CENTER">
+                <ProgressIndicator fx:id="spinner" prefWidth="24" prefHeight="24"/>
+            </HBox>
+        </VBox>
+    </VBox>
+</StackPane>

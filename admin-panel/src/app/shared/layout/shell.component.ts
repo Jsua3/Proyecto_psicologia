@@ -1,0 +1,262 @@
+import { CommonModule } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { AuthService } from '../../core/auth/auth.service';
+
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  caption: string;
+}
+
+@Component({
+  selector: 'app-shell',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatButtonModule,
+    MatIconModule,
+    MatListModule,
+    MatSidenavModule
+  ],
+  template: `
+    <mat-sidenav-container class="portal-shell">
+      <mat-sidenav #drawer class="portal-sidenav liquid-glass" [mode]="compactNav() ? 'over' : 'side'" [opened]="!compactNav() || drawerOpen()">
+        <div class="sidenav-header">
+          <a class="portal-brand" routerLink="/portal/dashboard" aria-label="Ir al dashboard">
+            <span class="portal-brand__mark">Ψ</span>
+            <span>
+              <strong>PsychoSim</strong>
+              <small>Facultad de Psicología</small>
+            </span>
+          </a>
+        </div>
+
+        <mat-nav-list aria-label="Navegación del portal">
+          @for (item of navItems; track item.route) {
+            <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link" (click)="closeMobileNav()">
+              <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+              <span matListItemTitle>{{ item.label }}</span>
+              <span matListItemLine>{{ item.caption }}</span>
+            </a>
+          }
+        </mat-nav-list>
+      </mat-sidenav>
+
+      <mat-sidenav-content class="portal-content">
+        <header class="portal-topbar liquid-glass">
+          <button class="psy-icon-button" type="button" aria-label="Alternar navegación" (click)="toggleNav()">
+            <mat-icon>menu</mat-icon>
+          </button>
+          <div>
+            <p class="topbar-kicker">Portal académico</p>
+            <h1>{{ currentSection() }}</h1>
+          </div>
+          <span class="topbar-spacer"></span>
+          <div class="user-pill">
+            <mat-icon>account_circle</mat-icon>
+            <span>{{ currentUserEmail() }}</span>
+          </div>
+          <button class="psy-icon-button" type="button" aria-label="Cerrar sesión" (click)="auth.logout()">
+            <mat-icon>logout</mat-icon>
+          </button>
+        </header>
+
+        <main class="portal-main">
+          <router-outlet />
+        </main>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
+  `,
+  styles: [`
+    .portal-shell {
+      min-height: 100vh;
+      background: transparent;
+    }
+    .portal-sidenav {
+      width: 288px;
+      border-right: 1px solid var(--psy-border);
+      border-radius: 0 22px 22px 0;
+      background: rgba(255,255,255,.76);
+      padding: 16px 12px;
+    }
+    .sidenav-header {
+      padding: 10px 8px 18px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--psy-border);
+    }
+    .portal-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      color: var(--psy-ink);
+    }
+    .portal-brand__mark {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(79,124,172,.16), rgba(79,163,165,.2));
+      color: var(--psy-blue-deep);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+    }
+    .portal-brand strong,
+    .portal-brand small {
+      display: block;
+      line-height: 1.12;
+    }
+    .portal-brand strong { font-size: 1.12rem; }
+    .portal-brand small { color: var(--psy-muted); font-size: .78rem; margin-top: 3px; }
+    mat-nav-list {
+      display: grid;
+      gap: 6px;
+    }
+    a[mat-list-item] {
+      min-height: 58px;
+      border-radius: 14px;
+      color: var(--psy-ink);
+    }
+    a[mat-list-item] mat-icon {
+      color: var(--psy-blue-deep);
+    }
+    .active-link {
+      background: rgba(79,124,172,.12) !important;
+      border: 1px solid rgba(79,124,172,.16);
+    }
+    .portal-content {
+      min-height: 100vh;
+    }
+    .portal-topbar {
+      position: sticky;
+      z-index: 20;
+      top: 16px;
+      width: calc(100% - 32px);
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 16px;
+      padding: 10px 14px;
+      border-radius: 20px;
+    }
+    .topbar-kicker {
+      margin: 0;
+      color: var(--psy-teal-deep);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .portal-topbar h1 {
+      margin: 2px 0 0;
+      color: var(--psy-ink);
+      font-size: 1.25rem;
+      line-height: 1.2;
+    }
+    .topbar-spacer {
+      flex: 1;
+    }
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 280px;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: var(--psy-muted);
+      background: rgba(255,255,255,.52);
+      border: 1px solid var(--psy-border);
+      overflow: hidden;
+    }
+    .user-pill span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .portal-main {
+      padding: 10px clamp(16px, 3vw, 36px) 44px;
+    }
+    @media (min-width: 921px) {
+      .portal-topbar .psy-icon-button:first-child {
+        display: none;
+      }
+    }
+    @media (max-width: 920px) {
+      .portal-sidenav {
+        width: min(310px, 88vw);
+        border-radius: 0 20px 20px 0;
+      }
+      .portal-topbar {
+        top: 10px;
+        width: calc(100% - 20px);
+        margin: 10px;
+      }
+      .user-pill {
+        display: none;
+      }
+      .portal-main {
+        padding-inline: 16px;
+      }
+    }
+    @media (max-width: 520px) {
+      .portal-topbar h1 {
+        font-size: 1rem;
+      }
+      .topbar-kicker {
+        font-size: .64rem;
+      }
+    }
+  `]
+})
+export class ShellComponent {
+  readonly auth = inject(AuthService);
+  readonly drawerOpen = signal(false);
+  readonly compactNav = signal(window.matchMedia('(max-width: 920px)').matches);
+
+  readonly navItems: NavItem[] = [
+    { label: 'Dashboard', icon: 'dashboard', route: '/portal/dashboard', caption: 'Métricas y seguimiento' },
+    { label: 'Casos', icon: 'account_tree', route: '/portal/casos', caption: 'Catálogo y versiones' },
+    { label: 'Grupos', icon: 'groups', route: '/portal/grupos', caption: 'Cohortes académicas' },
+    { label: 'Reportes', icon: 'analytics', route: '/portal/reportes', caption: 'Analíticas formativas' }
+  ];
+
+  constructor() {
+    window.matchMedia('(max-width: 920px)').addEventListener('change', event => {
+      this.compactNav.set(event.matches);
+      if (!event.matches) {
+        this.drawerOpen.set(false);
+      }
+    });
+  }
+
+  toggleNav() {
+    this.drawerOpen.set(!this.drawerOpen());
+  }
+
+  closeMobileNav() {
+    if (this.compactNav()) {
+      this.drawerOpen.set(false);
+    }
+  }
+
+  currentUserEmail() {
+    return this.auth.currentUser()?.email ?? 'usuario institucional';
+  }
+
+  currentSection() {
+    return 'Simulación, evaluación y acompañamiento';
+  }
+}

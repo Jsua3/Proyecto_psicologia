@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.psychosim.client.controller.LobbyController"
+            styleClass="lobby-root">
+
+    <!-- Toolbar -->
+    <top>
+        <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="16">
+            <Label text="PsychoSim" styleClass="toolbar-brand"/>
+            <Label fx:id="welcomeLabel" styleClass="toolbar-user"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cerrar sesión" onAction="#onLogout" styleClass="outline-button"/>
+        </HBox>
+    </top>
+
+    <!-- Content -->
+    <center>
+        <VBox alignment="CENTER" spacing="24" styleClass="lobby-content">
+            <Label text="Selecciona un caso para jugar" styleClass="section-title"/>
+            <Label fx:id="statusLabel" styleClass="status-label"/>
+
+            <ListView fx:id="casosListView" styleClass="caso-list"
+                      prefWidth="600" prefHeight="350"/>
+
+            <Button fx:id="jugarButton" text="▶  Comenzar caso"
+                    onAction="#onJugar" styleClass="primary-button" prefWidth="220"/>
+        </VBox>
+    </center>
+</BorderPane>

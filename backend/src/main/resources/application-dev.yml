@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/psychosim
+    username: psychosim
+    password: psychosim_secret
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.psychosim: DEBUG
+    org.springframework.security: DEBUG

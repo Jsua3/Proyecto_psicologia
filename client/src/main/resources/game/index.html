@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PsychoSim Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A0A1E; overflow: hidden; }
+    #game-container { width: 100vw; height: 100vh; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container"></div>
+  <script src="phaser.min.js"></script>
+  <script src="game/bridge.js"></script>
+  <script src="game/DialogScene.js"></script>
+  <script src="game/ResultsScene.js"></script>
+  <script src="game/GameScene.js"></script>
+  <script>
+    var gameInstance = null;
+    var pendingCasoId = null;
+    var pendingSesionId = null;
+
+    function startGame(casoId, sesionId) {
+      pendingCasoId = casoId;
+      pendingSesionId = sesionId;
+
+      if (gameInstance) { gameInstance.destroy(true); }
+
+      gameInstance = new Phaser.Game({
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        parent: 'game-container',
+        backgroundColor: '#0A0A1E',
+        scene: [GameScene, DialogScene, ResultsScene],
+        physics: {
+          default: 'arcade',
+          arcade: { gravity: { y: 0 }, debug: false }
+        }
+      });
+
+      window.PSYCHOSIM_CASO_ID = casoId;
+      window.PSYCHOSIM_SESION_ID = sesionId;
+    }
+
+    window.addEventListener('resize', () => {
+      if (gameInstance) {
+        gameInstance.scale.resize(window.innerWidth, window.innerHeight);
+      }
+    });
+  </script>
+</body>
+</html>

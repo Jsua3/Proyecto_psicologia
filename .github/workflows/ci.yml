@@ -1,0 +1,71 @@
+name: PsychoSim CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend — Build & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: psychosim_test
+          POSTGRES_USER: psychosim
+          POSTGRES_PASSWORD: psychosim_secret
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and test backend
+        working-directory: backend
+        run: mvn verify
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/psychosim_test
+          SPRING_DATASOURCE_USERNAME: psychosim
+          SPRING_DATASOURCE_PASSWORD: psychosim_secret
+          JWT_SECRET: test-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
+
+  frontend:
+    name: Frontend — Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: admin-panel/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin-panel
+        run: npm ci
+
+      - name: Run tests
+        working-directory: admin-panel
+        run: npm test -- --coverage
+
+      - name: Build
+        working-directory: admin-panel
+        run: npm run build

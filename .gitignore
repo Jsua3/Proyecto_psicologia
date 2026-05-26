@@ -1,0 +1,36 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.class
+*.log
+
+# Angular / Node
+node_modules/
+.angular/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# QA / generated artifacts
+qa-screenshots/
+playwright-report/
+test-results/
+
+# Local runtime data
+*.pid
+*.seed
+*.tmp
+tmp/
+temp/

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.psychosim.client.controller.GameController"
+            styleClass="game-root">
+
+    <top>
+        <HBox styleClass="game-toolbar" alignment="CENTER_LEFT" spacing="12">
+            <Button text="← Lobby" onAction="#onVolver" styleClass="outline-button-sm"/>
+            <Label text="PsychoSim" styleClass="toolbar-brand"/>
+        </HBox>
+    </top>
+
+    <center>
+        <WebView fx:id="gameWebView"/>
+    </center>
+</BorderPane>

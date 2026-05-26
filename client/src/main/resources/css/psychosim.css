@@ -1,0 +1,151 @@
+/* PsychoSim — JavaFX Theme */
+
+/* ===== Root ===== */
+.login-root {
+    -fx-background-color: #F2F5F8;
+}
+
+.lobby-root, .game-root {
+    -fx-background-color: #F2F5F8;
+}
+
+/* ===== Login card ===== */
+.login-card {
+    -fx-background-color: white;
+    -fx-padding: 40 40 40 40;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 16, 0, 0, 4);
+}
+
+.brand-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #3A5A8A;
+}
+
+.brand-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #666;
+}
+
+.field-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1A2B3C;
+}
+
+.text-field {
+    -fx-background-color: #F2F5F8;
+    -fx-border-color: #D6E4F0;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 10 14;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused {
+    -fx-border-color: #3A5A8A;
+    -fx-background-color: white;
+}
+
+.error-label {
+    -fx-text-fill: #C0392B;
+    -fx-font-size: 12px;
+}
+
+/* ===== Buttons ===== */
+.primary-button {
+    -fx-background-color: #3A5A8A;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 24;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #2E4A7A;
+}
+
+.primary-button:disabled {
+    -fx-background-color: #7A9EC0;
+    -fx-text-fill: rgba(255,255,255,0.7);
+}
+
+.outline-button {
+    -fx-background-color: transparent;
+    -fx-border-color: #3A5A8A;
+    -fx-border-radius: 6;
+    -fx-text-fill: #3A5A8A;
+    -fx-font-size: 13px;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.outline-button-sm {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(255,255,255,0.5);
+    -fx-border-radius: 4;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-padding: 6 12;
+    -fx-cursor: hand;
+}
+
+/* ===== Toolbar ===== */
+.toolbar {
+    -fx-background-color: #3A5A8A;
+    -fx-padding: 12 20;
+}
+
+.toolbar-brand {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.toolbar-user {
+    -fx-font-size: 13px;
+    -fx-text-fill: rgba(255,255,255,0.85);
+}
+
+.game-toolbar {
+    -fx-background-color: #1A2B3C;
+    -fx-padding: 8 16;
+}
+
+/* ===== Lobby ===== */
+.lobby-content {
+    -fx-padding: 40;
+}
+
+.section-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1A2B3C;
+}
+
+.status-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #666;
+}
+
+.caso-list {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #D6E4F0;
+    -fx-border-radius: 8;
+}
+
+.caso-list .list-cell {
+    -fx-padding: 14 20;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1A2B3C;
+}
+
+.caso-list .list-cell:selected {
+    -fx-background-color: #D6E4F0;
+    -fx-text-fill: #3A5A8A;
+    -fx-font-weight: bold;
+}
