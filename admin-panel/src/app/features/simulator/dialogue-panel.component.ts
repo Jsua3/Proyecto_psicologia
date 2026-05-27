@@ -36,7 +36,7 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
 
           @if (isTypingComplete() && d.choices?.length) {
             <div class="choices" role="group" aria-label="Opciones de intervención">
-              @for (choice of d.choices; track choice.id) {
+              @for (choice of d.choices; track choice.key) {
                 <button
                   type="button"
                   class="choice-btn"
