@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild, effect, input, output, signal } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild, effect, inject, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { DialogueChoiceState, DialogueState, MapObjectState } from '../../core/models/simulation.model';
+import { AudioService } from './audio.service';
 
 const CHARS_PER_SEC = 22;
 const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
@@ -43,6 +44,7 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
                   [class.choice-btn--recommended]="choice.isRecommended"
                   [class.choice-btn--prohibited]="choice.isProhibited"
                   [attr.aria-label]="choice.text + (choice.isRecommended ? ' (recomendada)' : '') + (choice.isProhibited ? ' (contraindicada)' : '')"
+                  (mouseenter)="onChoiceHover()"
                   (click)="handleChoice(choice)">
                   {{ choice.text }}
                 </button>
@@ -209,6 +211,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
 
   private typewriterHandle: ReturnType<typeof setInterval> | null = null;
   private currentLineIndex = 0;
+  private readonly audio = inject(AudioService);
 
   constructor() {
     effect(() => {
@@ -216,12 +219,17 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       this.stopTypewriter();
       this.currentLineIndex = 0;
       if (d?.lines?.length) {
+        this.audio.play('dialogue-open');
         this.startTypewriter(d.lines[0].text);
       } else {
         this.displayedText.set('');
         this.isTypingComplete.set(true);
       }
     });
+  }
+
+  onChoiceHover(): void {
+    this.audio.play('choice-hover');
   }
 
   ngAfterViewChecked() {
@@ -237,6 +245,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   }
 
   handleChoice(choice: DialogueChoiceState) {
+    this.audio.play(choice.isProhibited ? 'choice-error' : 'choice-select');
     if (choice.decisionOptionId != null) {
       this.execute.emit(choice.decisionOptionId);
     } else if (choice.requiredToolCode != null) {

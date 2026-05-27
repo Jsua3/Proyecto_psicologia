@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { AudioService } from './audio.service';
 
 @Component({
   selector: 'app-journal-panel',
@@ -17,7 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
       <div class="sheet-header">
         <mat-icon aria-hidden="true">menu_book</mat-icon>
         <h3 id="journal-heading">Bitácora clínica</h3>
-        <button class="sheet-close psy-icon-button" type="button" aria-label="Cerrar bitácora" (click)="closeSheet.emit()">
+        <button class="sheet-close psy-icon-button" type="button" aria-label="Cerrar bitácora" (click)="onCloseClick()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -134,6 +135,16 @@ export class JournalPanelComponent {
   readonly closeSheet = output<void>();
 
   text = '';
+  private readonly audio = inject(AudioService);
+
+  constructor() {
+    effect(() => { if (this.open()) this.audio.play('journal-open'); });
+  }
+
+  onCloseClick(): void {
+    this.audio.play('journal-close');
+    this.closeSheet.emit();
+  }
 
   clear() {
     this.text = '';

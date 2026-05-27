@@ -14,6 +14,7 @@ import { JournalPanelComponent } from './journal-panel.component';
 import { MinimapComponent, MinimapStage } from './minimap.component';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
+import { AudioService } from './audio.service';
 
 @Component({
   selector: 'app-simulation-play',
@@ -214,6 +215,7 @@ import { ToolInventoryComponent } from './tool-inventory.component';
 export class SimulationPlayComponent implements OnInit {
   private readonly simulationService = inject(SimulationService);
   private readonly route = inject(ActivatedRoute);
+  private readonly audio = inject(AudioService);
 
   @ViewChild('gameWorld')    private gameWorld?: GameWorldComponent;
   @ViewChild('journalPanel') private journalPanel?: JournalPanelComponent;
@@ -394,6 +396,7 @@ export class SimulationPlayComponent implements OnInit {
   }
 
   private showToolFeedback(result: ToolUseResult): void {
+    this.audio.play('tool-use');
     this.dialogue.set({
       key: `tool-feedback-${result.toolCode}-${Date.now()}`,
       speakerName: result.pertinent ? '✓ Herramienta pertinente' : 'ℹ Herramienta aplicada',
@@ -429,6 +432,7 @@ export class SimulationPlayComponent implements OnInit {
   }
 
   private triggerFade(callback: () => void): void {
+    this.audio.play('scene-transition');
     this.fadeActive.set(true);
     window.setTimeout(callback, 340);
   }
