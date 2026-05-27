@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem {
@@ -12,6 +14,11 @@ interface NavItem {
   icon: string;
   route: string;
   caption: string;
+}
+
+/** Returns true when the given URL is an active simulation play route. */
+export function isGameRoute(url: string): boolean {
+  return /\/portal\/simulador\/\d+/.test(url);
 }
 
 @Component({
@@ -32,10 +39,10 @@ interface NavItem {
       <mat-sidenav #drawer class="portal-sidenav liquid-glass" [mode]="compactNav() ? 'over' : 'side'" [opened]="!compactNav() || drawerOpen()">
         <div class="sidenav-header">
           <a class="portal-brand" routerLink="/portal/dashboard" aria-label="Ir al dashboard">
-            <span class="portal-brand__mark">Ψ</span>
+            <img class="portal-brand__logo" src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="82" height="41">
             <span>
               <strong>PsychoSim</strong>
-              <small>Facultad de Psicología</small>
+              <small>Psicología Humboldt</small>
             </span>
           </a>
         </div>
@@ -82,7 +89,7 @@ interface NavItem {
       background: transparent;
     }
     .portal-sidenav {
-      width: 288px;
+      width: 296px;
       border-right: 1px solid var(--psy-border);
       border-radius: 0 22px 22px 0;
       background: rgba(255,255,255,.76);
@@ -97,47 +104,34 @@ interface NavItem {
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      min-height: 48px;
+      min-height: 54px;
       color: var(--psy-ink);
     }
-    .portal-brand__mark {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
+    .portal-brand__logo {
+      width: 82px;
+      height: auto;
+      object-fit: contain;
+      padding: 6px;
       border-radius: 14px;
-      background: linear-gradient(135deg, rgba(79,124,172,.16), rgba(79,163,165,.2));
-      color: var(--psy-blue-deep);
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.9rem;
-      font-weight: 700;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--psy-border);
     }
     .portal-brand strong,
-    .portal-brand small {
-      display: block;
-      line-height: 1.12;
-    }
+    .portal-brand small { display: block; line-height: 1.12; }
     .portal-brand strong { font-size: 1.12rem; }
     .portal-brand small { color: var(--psy-muted); font-size: .78rem; margin-top: 3px; }
-    mat-nav-list {
-      display: grid;
-      gap: 6px;
-    }
+    mat-nav-list { display: grid; gap: 6px; }
     a[mat-list-item] {
       min-height: 58px;
       border-radius: 14px;
       color: var(--psy-ink);
     }
-    a[mat-list-item] mat-icon {
-      color: var(--psy-blue-deep);
-    }
+    a[mat-list-item] mat-icon { color: var(--psy-blue-deep); }
     .active-link {
       background: rgba(79,124,172,.12) !important;
       border: 1px solid rgba(79,124,172,.16);
     }
-    .portal-content {
-      min-height: 100vh;
-    }
+    .portal-content { min-height: 100vh; }
     .portal-topbar {
       position: sticky;
       z-index: 20;
@@ -165,9 +159,7 @@ interface NavItem {
       font-size: 1.25rem;
       line-height: 1.2;
     }
-    .topbar-spacer {
-      flex: 1;
-    }
+    .topbar-spacer { flex: 1; }
     .user-pill {
       display: inline-flex;
       align-items: center;
@@ -186,70 +178,69 @@ interface NavItem {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .portal-main {
-      padding: 10px clamp(16px, 3vw, 36px) 44px;
-    }
+    .portal-main { padding: 10px clamp(16px, 3vw, 36px) 44px; }
     @media (min-width: 921px) {
-      .portal-topbar .psy-icon-button:first-child {
-        display: none;
-      }
+      .portal-topbar .psy-icon-button:first-child { display: none; }
     }
     @media (max-width: 920px) {
-      .portal-sidenav {
-        width: min(310px, 88vw);
-        border-radius: 0 20px 20px 0;
-      }
-      .portal-topbar {
-        top: 10px;
-        width: calc(100% - 20px);
-        margin: 10px;
-      }
-      .user-pill {
-        display: none;
-      }
-      .portal-main {
-        padding-inline: 16px;
-      }
+      .portal-sidenav { width: min(310px, 88vw); border-radius: 0 20px 20px 0; }
+      .portal-topbar { top: 10px; width: calc(100% - 20px); margin: 10px; }
+      .user-pill { display: none; }
+      .portal-main { padding-inline: 16px; }
     }
     @media (max-width: 520px) {
-      .portal-topbar h1 {
-        font-size: 1rem;
-      }
-      .topbar-kicker {
-        font-size: .64rem;
-      }
+      .portal-topbar h1 { font-size: 1rem; }
+      .topbar-kicker { font-size: .64rem; }
     }
   `]
 })
-export class ShellComponent {
+export class ShellComponent implements OnDestroy {
   readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
   readonly drawerOpen = signal(false);
   readonly compactNav = signal(window.matchMedia('(max-width: 920px)').matches);
+  readonly inGameMode = signal(false);
 
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/portal/dashboard', caption: 'Métricas y seguimiento' },
-    { label: 'Casos', icon: 'account_tree', route: '/portal/casos', caption: 'Catálogo y versiones' },
-    { label: 'Grupos', icon: 'groups', route: '/portal/grupos', caption: 'Cohortes académicas' },
-    { label: 'Reportes', icon: 'analytics', route: '/portal/reportes', caption: 'Analíticas formativas' }
+    { label: 'Dashboard',  icon: 'dashboard',    route: '/portal/dashboard',             caption: 'Métricas y seguimiento' },
+    { label: 'Simulador',  icon: 'play_circle',  route: '/portal/simulador',             caption: 'Juego de casos' },
+    { label: 'Casos',      icon: 'account_tree', route: '/portal/casos',                 caption: 'Catálogo y versiones' },
+    { label: 'Docente',    icon: 'timeline',     route: '/portal/docente/trazabilidad',  caption: 'Trazabilidad y rúbricas' },
+    { label: 'Grupos',     icon: 'groups',       route: '/portal/grupos',                caption: 'Cohortes académicas' },
+    { label: 'Reportes',   icon: 'analytics',    route: '/portal/reportes',              caption: 'Analíticas formativas' }
   ];
+
+  private readonly routerSub: Subscription;
 
   constructor() {
     window.matchMedia('(max-width: 920px)').addEventListener('change', event => {
       this.compactNav.set(event.matches);
-      if (!event.matches) {
-        this.drawerOpen.set(false);
-      }
+      if (!event.matches) this.drawerOpen.set(false);
     });
+
+    this.routerSub = this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e: NavigationEnd) => {
+        const gameMode = isGameRoute(e.urlAfterRedirects);
+        this.inGameMode.set(gameMode);
+        if (gameMode) {
+          document.body.classList.add('game-mode');
+        } else {
+          document.body.classList.remove('game-mode');
+        }
+      });
   }
 
-  toggleNav() {
-    this.drawerOpen.set(!this.drawerOpen());
+  ngOnDestroy(): void {
+    this.routerSub.unsubscribe();
+    document.body.classList.remove('game-mode');
   }
+
+  toggleNav() { this.drawerOpen.set(!this.drawerOpen()); }
 
   closeMobileNav() {
-    if (this.compactNav()) {
-      this.drawerOpen.set(false);
-    }
+    if (this.compactNav()) this.drawerOpen.set(false);
   }
 
   currentUserEmail() {
