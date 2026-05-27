@@ -1,13 +1,19 @@
 /**
- * Kenney.nl Tiny Town & Tiny RPG Characters frame indices for Phaser spritesheets.
+ * Kenney.nl asset frame indices for Phaser spritesheets.
  *
- * HOW TO FIND FRAME NUMBERS:
- * Open the PNG in a tile inspector (e.g. Tiled map editor) or count manually:
- *   - Tile row 0: frames 0..cols-1
- *   - Tile row 1: frames cols..(2*cols-1)
- * Tiny Town packed sheet is 12 cols wide. Tiny RPG Characters is also 12 cols wide.
+ * Tiny Town / Tiny Dungeon (tilemap_packed.png): 192×176 → 12 cols × 11 rows, 16×16 px tiles.
+ *   Frame index = row * 12 + col
  *
- * Adjust the values below after inspecting the downloaded files.
+ * RPG Urban Pack (tilemap_packed.png): 432×288 → 27 cols × 18 rows, 16×16 px tiles.
+ *   Frame index = row * 27 + col
+ *   Characters occupy columns 23–26 (4 cols).
+ *   Each character uses 3 rows (3 walk directions × 4 frames):
+ *     Row +0 = walk DOWN  │ Row +1 = walk SIDE (flipX for left) │ Row +2 = walk UP
+ *   Character groups (row-0-indexed):
+ *     Char 1 (orange/teal)   rows  0–2  │ Char 2 (orange/red)   rows  3–5
+ *     Char 3 (blue/purple) ★ rows  6–8  ← player (professional look)
+ *     Char 4 (brown/amber) ★ rows  9–11 ← patient NPC
+ *     Char 5 (orange/lilac)  rows 12–14 │ Char 6 (dark/charcoal)★ rows 15–17 ← supervisor
  */
 export const KenneyTownFrames = {
   /** Light wooden floor tile — row 1, col 4 of tiny-town packed */
@@ -36,24 +42,19 @@ export const KenneyDungeonFrames = {
 } as const;
 
 export const KenneyCharFrames = {
-  /**
-   * Each character occupies 3 columns × 4 rows (down, left, right, up).
-   * Character 0 (intern/student) starts at frame 0.
-   * Character 1 (patient/client) starts at frame 12.
-   * Character 2 (supervisor) starts at frame 24.
-   *
-   * Within each character block:
-   *   frames +0..+2 = walk down
-   *   frames +3..+5 = walk left
-   *   frames +6..+8 = walk right
-   *   frames +9..+11 = walk up
-   */
-  PLAYER_WALK_DOWN:  [0, 1, 2],
-  PLAYER_WALK_LEFT:  [3, 4, 5],
-  PLAYER_WALK_RIGHT: [6, 7, 8],
-  PLAYER_WALK_UP:    [9, 10, 11],
-  PLAYER_IDLE:       0,
+  // ── Player: Char 3, blue/purple outfit (rows 6–8, cols 23–26 of RPG Urban Pack) ──
+  // row 6 → DOWN:  6*27+23=185 … 188
+  // row 7 → SIDE:  7*27+23=212 … 215  (set sprite.flipX=true when walking left)
+  // row 8 → UP:    8*27+23=239 … 242
+  PLAYER_WALK_DOWN:  [185, 186, 187, 188],
+  PLAYER_WALK_RIGHT: [212, 213, 214, 215],
+  PLAYER_WALK_LEFT:  [212, 213, 214, 215],  // same frames as right — flip sprite in code
+  PLAYER_WALK_UP:    [239, 240, 241, 242],
+  PLAYER_IDLE: 185,
 
-  NPC_PATIENT_IDLE:     12,
-  NPC_SUPERVISOR_IDLE:  24,
+  // ── Patient NPC: Char 4, brown/amber outfit (rows 9–11) — idle = 9*27+23 = 266 ──
+  NPC_PATIENT_IDLE: 266,
+
+  // ── Supervisor NPC: Char 6, dark/charcoal outfit (rows 15–17) — idle = 15*27+23 = 428 ──
+  NPC_SUPERVISOR_IDLE: 428,
 } as const;

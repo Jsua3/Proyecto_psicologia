@@ -42,7 +42,7 @@ class DataDrivenWorldScene extends Phaser.Scene {
       '/assets/game/kenney/tiny-dungeon/Tilemap/tilemap_packed.png',
       { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('characters',
-      '/assets/game/kenney/tiny-rpg-characters/Spritesheet/characters.png',
+      '/assets/game/kenney/rpg-urban-pack/Spritesheet/tilemap_packed.png',
       { frameWidth: 16, frameHeight: 16 });
     this.load.once('complete', () => { this.assetsLoaded = true; });
   }
@@ -72,8 +72,10 @@ class DataDrivenWorldScene extends Phaser.Scene {
       this.lastDirection = Math.abs(dx) >= Math.abs(dy)
         ? (dx > 0 ? 'right' : 'left')
         : (dy > 0 ? 'down' : 'up');
-      if (this.playerSprite && !this.callbacks.reduceMotion) {
-        this.playerSprite.play(`walk-${this.lastDirection}`, true);
+      if (this.playerSprite) {
+        if (this.lastDirection === 'left')  this.playerSprite.setFlipX(true);
+        if (this.lastDirection === 'right') this.playerSprite.setFlipX(false);
+        if (!this.callbacks.reduceMotion) this.playerSprite.play(`walk-${this.lastDirection}`, true);
       }
     } else {
       this.playerSprite?.stop();
