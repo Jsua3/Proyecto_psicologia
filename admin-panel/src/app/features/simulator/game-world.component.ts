@@ -36,9 +36,13 @@ class DataDrivenWorldScene extends Phaser.Scene {
       // Missing asset — fallback rendering used
     });
 
-    // Dungeon tileset as a plain image (used by Tiled tilemap layers)
-    this.load.image('dungeon-img',
-      '/assets/game/kenney/tiny-dungeon/Tilemap/tilemap_packed.png');
+    // ── Plain images for Tiled tilemap layer rendering (all 3 Kenney packs) ──
+    // tiny-dungeon: 12×11 = 132 tiles  (GID  1–132)
+    // tiny-town:    12×11 = 132 tiles  (GID  133–264)
+    // rpg-urban:    27×18 = 486 tiles  (GID  265–750)
+    this.load.image('dungeon-img', '/assets/game/kenney/tiny-dungeon/Tilemap/tilemap_packed.png');
+    this.load.image('town-img',   '/assets/game/kenney/tiny-town/Tilemap/tilemap_packed.png');
+    this.load.image('rpg-img',    '/assets/game/kenney/rpg-urban-pack/Spritesheet/tilemap_packed.png');
 
     // Dungeon spritesheet (used for interactive object marker icons)
     this.load.spritesheet('dungeon-tiles',
@@ -184,10 +188,14 @@ class DataDrivenWorldScene extends Phaser.Scene {
     if (this.assetsLoaded) {
       try {
         const tilemap    = this.make.tilemap({ key: `map-${mapKey}` });
-        const tilesetImg = tilemap.addTilesetImage('tiny-dungeon', 'dungeon-img');
-        if (tilesetImg) {
-          tilemap.createLayer('Floor', tilesetImg)?.setDepth(2);
-          tilemap.createLayer('Walls', tilesetImg)?.setDepth(3);
+        // Register all 3 tilesets — only those present in the map JSON are used
+        const ts1 = tilemap.addTilesetImage('tiny-dungeon', 'dungeon-img');
+        const ts2 = tilemap.addTilesetImage('tiny-town',    'town-img');
+        const ts3 = tilemap.addTilesetImage('rpg-urban',    'rpg-img');
+        const tilesets = [ts1, ts2, ts3].filter((t): t is Phaser.Tilemaps.Tileset => t !== null);
+        if (tilesets.length > 0) {
+          tilemap.createLayer('Floor', tilesets)?.setDepth(2);
+          tilemap.createLayer('Walls', tilesets)?.setDepth(3);
         }
         tiledObjects = tilemap.getObjectLayer('Objects')?.objects ?? [];
         hasTiledMap  = true;
