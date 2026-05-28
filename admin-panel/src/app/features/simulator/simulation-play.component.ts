@@ -131,13 +131,15 @@ import { AudioService } from './audio.service';
   styles: [`
     :host { display: block; }
     .game-container { position: fixed; inset: 0; overflow: hidden; background: #0a0f14; }
-    .game-layer { position: absolute; inset: 0; z-index: 10; }
-    .world-skeleton { position: absolute; inset: 0; z-index: 10; background: #0e141a; }
+    /* Reserve bottom 110 px for the dialogue strip — world never extends into it */
+    .game-layer { position: absolute; inset: 0 0 110px 0; z-index: 10; }
+    .world-skeleton { position: absolute; inset: 0 0 110px 0; z-index: 10; background: #0e141a; }
     app-simulation-hud.hud-layer { position: absolute; top: 0; left: 0; right: 0; z-index: 50; }
     app-minimap.minimap-layer { position: absolute; top: 62px; right: 12px; z-index: 50; }
-    app-tool-inventory.tools-layer { position: absolute; bottom: 92px; left: 12px; z-index: 50; }
+    /* HUD buttons sit just inside the top of the dialogue-reserved zone */
+    app-tool-inventory.tools-layer { position: absolute; bottom: 118px; left: 12px; z-index: 50; }
     .proximity-hint {
-      position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 50;
+      position: absolute; bottom: 118px; left: 50%; transform: translateX(-50%); z-index: 50;
       display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
       background: rgba(8,12,18,.82); border: 1px solid rgba(79,163,165,.3);
       color: #e8f0f4; font-size: .82rem; font-weight: 700; white-space: nowrap; pointer-events: none;
@@ -150,7 +152,7 @@ import { AudioService } from './audio.service';
       font-family: 'JetBrains Mono', monospace; color: #4fa3a5;
     }
     .journal-toggle {
-      position: absolute; bottom: 92px; right: 12px; z-index: 50;
+      position: absolute; bottom: 118px; right: 12px; z-index: 50;
       width: 44px; height: 44px; border: 1px solid rgba(79,163,165,.28); border-radius: 10px;
       background: rgba(8,12,18,.76); color: rgba(79,163,165,.6); cursor: pointer;
       display: grid; place-items: center; transition: border-color 160ms, color 160ms;
@@ -165,7 +167,7 @@ import { AudioService } from './audio.service';
     .safe-exit-btn:hover { border-color: rgba(168,80,98,.6); color: rgba(168,80,98,.9); }
     .safe-exit-btn:disabled { opacity: .35; cursor: not-allowed; }
     .controls-hint {
-      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 50;
+      position: absolute; bottom: 116px; left: 50%; transform: translateX(-50%); z-index: 50;
       padding: 5px 12px; border-radius: 999px; background: rgba(8,12,18,.5);
       color: rgba(232,240,244,.3); font-size: .66rem; font-weight: 700; letter-spacing: .05em;
       pointer-events: none; white-space: nowrap;

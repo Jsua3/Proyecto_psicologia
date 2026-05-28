@@ -3,7 +3,7 @@ import { Component, ElementRef, NgZone, OnChanges, OnDestroy, SimpleChanges, Vie
 import { MatIconModule } from '@angular/material/icon';
 import Phaser from 'phaser';
 import { CollisionZoneState, MapObjectState, SimulationWorldState } from '../../core/models/simulation.model';
-import { KenneyCharFrames, KenneyDungeonFrames, KenneyTownFrames } from './kenney-frames.constants';
+import { KenneyCharFrames, KenneyDungeonFrames } from './kenney-frames.constants';
 
 interface WorldCallbacks {
   onProximity: (obj: MapObjectState | null) => void;
@@ -33,17 +33,33 @@ class DataDrivenWorldScene extends Phaser.Scene {
 
   preload() {
     this.load.on('loaderror', (_file: Phaser.Loader.File) => {
-      // Missing asset — geometric fallback will be used
+      // Missing asset — fallback rendering used
     });
-    this.load.spritesheet('town-tiles',
-      '/assets/game/kenney/tiny-town/Tilemap/tilemap_packed.png',
-      { frameWidth: 16, frameHeight: 16 });
+
+    // Dungeon tileset as a plain image (used by Tiled tilemap layers)
+    this.load.image('dungeon-img',
+      '/assets/game/kenney/tiny-dungeon/Tilemap/tilemap_packed.png');
+
+    // Dungeon spritesheet (used for interactive object marker icons)
     this.load.spritesheet('dungeon-tiles',
       '/assets/game/kenney/tiny-dungeon/Tilemap/tilemap_packed.png',
       { frameWidth: 16, frameHeight: 16 });
+
+    // Character spritesheet (player + NPCs)
     this.load.spritesheet('characters',
       '/assets/game/kenney/rpg-urban-pack/Spritesheet/tilemap_packed.png',
       { frameWidth: 16, frameHeight: 16 });
+
+    // Tiled JSON maps — all known scenario keys (missing ones fail silently)
+    // Rename the Tiled object "name" field to match your backend object keys.
+    const scenarioKeys = [
+      'urgencias-crisis', 'ruta-proteccion', 'informe-integral',
+      'valoracion-comisaria', 'proteccion-nna', 'cierre-seguimiento'
+    ];
+    for (const key of scenarioKeys) {
+      this.load.tilemapTiledJSON(`map-${key}`, `/assets/game/maps/${key}.json`);
+    }
+
     this.load.once('complete', () => { this.assetsLoaded = true; });
   }
 
@@ -147,28 +163,56 @@ class DataDrivenWorldScene extends Phaser.Scene {
     this.markerData.clear();
     this.doorHints.clear();
 
+    const mapKey  = this.world.map.key;
     const { width: mapW, height: mapH } = this.world.map;
     this.cameras.main.setBackgroundColor('#0e141a');
 
-    if (this.assetsLoaded && this.textures.exists('town-tiles')) {
-      this.add.tileSprite(mapW/2, mapH/2, mapW-40, mapH-42, 'town-tiles', KenneyTownFrames.FLOOR_WOOD).setAlpha(.9);
-    } else {
-      this.add.rectangle(mapW/2, mapH/2, mapW-40, mapH-42, 0xf4f8fb, 1)
-        .setStrokeStyle(3, this.borderFor(this.world.map.theme), .4);
-      const grid = this.add.graphics();
-      grid.lineStyle(1, this.borderFor(this.world.map.theme), .14);
-      for (let x=52; x<=mapW-52; x+=48) grid.lineBetween(x, 38, x, mapH-38);
-      for (let y=42; y<=mapH-42; y+=48) grid.lineBetween(40, y, mapW-40, y);
+    // ── Try Tiled map first ────────────────────────────────────────────────
+    let tiledObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
+    let usingTiled = false;
+
+    if (this.assetsLoaded) {
+      try {
+        const tilemap    = this.make.tilemap({ key: `map-${mapKey}` });
+        const tilesetImg = tilemap.addTilesetImage('tiny-dungeon', 'dungeon-img');
+        if (tilesetImg) {
+          tilemap.createLayer('Floor', tilesetImg)?.setDepth(0);
+          tilemap.createLayer('Walls', tilesetImg)?.setDepth(2);
+          usingTiled = true;
+        }
+        tiledObjects = tilemap.getObjectLayer('Objects')?.objects ?? [];
+      } catch {
+        // Map JSON not found or tileset error → fall back to procedural rendering
+        usingTiled = false;
+      }
     }
 
+    if (!usingTiled) {
+      // ── Fallback: procedural floor + grid ─────────────────────────────
+      this.add.rectangle(mapW/2, mapH/2, mapW-40, mapH-42, 0x131c28, 1);
+      const g = this.add.graphics();
+      g.lineStyle(1, 0x1c2d3e, 0.65);
+      for (let x = 56; x <= mapW-56; x += 32) g.lineBetween(x, 44, x, mapH-44);
+      for (let y = 56; y <= mapH-56; y += 32) g.lineBetween(44, y, mapW-44, y);
+      this.world.collisions.forEach(zone => this.renderCollisionZone(zone));
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
+    // Room border + title
     this.add.rectangle(mapW/2, mapH/2, mapW-36, mapH-38)
-      .setStrokeStyle(3, 0x4f7cac, .3).setFillStyle(0x000000, 0);
+      .setStrokeStyle(3, 0x4f7cac, .3).setFillStyle(0x000000, 0).setDepth(3);
     this.add.text(56, 46, this.world.map.title, {
       fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#9dc0e8', fontStyle: 'bold'
-    }).setDepth(5);
+    }).setDepth(6);
 
-    this.world.collisions.forEach(zone => this.renderCollisionZone(zone));
-    this.world.objects.forEach(obj => this.createMarker(obj));
+    // Merge Tiled object positions with backend objects.
+    // Tiled object "name" must match the backend MapObjectState "key".
+    const mergedObjects = this.world.objects.map(obj => {
+      const t = tiledObjects.find(o => o.name === obj.key);
+      return (t?.x != null && t?.y != null) ? { ...obj, x: t.x, y: t.y } : obj;
+    });
+
+    mergedObjects.forEach(obj => this.createMarker(obj));
     this.createPlayer(this.world.player.x, this.world.player.y);
     this.refreshMarkerStates();
     this.updateNearestInteraction();
@@ -178,13 +222,12 @@ class DataDrivenWorldScene extends Phaser.Scene {
     const cx = zone.x + zone.width/2;
     const cy = zone.y + zone.height/2;
     const isDoor = /puerta|door/i.test(zone.label ?? '');
-    if (this.assetsLoaded && this.textures.exists('town-tiles')) {
-      this.add.tileSprite(cx, cy, zone.width, zone.height, 'town-tiles',
-        isDoor ? KenneyTownFrames.DOOR_CLOSED : KenneyTownFrames.WALL_H).setDepth(4);
-    } else {
-      this.add.rectangle(cx, cy, zone.width, zone.height, 0xffffff, .82)
-        .setStrokeStyle(2, this.borderFor(this.world!.map.theme), .22).setDepth(4);
-    }
+    // Walls: solid dark panels; doors get a subtle teal accent
+    const themeClr = this.borderFor(this.world!.map.theme);
+    this.add.rectangle(cx, cy, zone.width, zone.height,
+      isDoor ? 0x0c1926 : 0x090d14, isDoor ? .92 : 1)
+      .setStrokeStyle(isDoor ? 2 : 1, isDoor ? themeClr : 0x18263a, isDoor ? .8 : .45)
+      .setDepth(4);
     if (zone.label) {
       this.add.text(zone.x+5, zone.y+3, zone.label, {
         fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#9dc0e8',
@@ -218,8 +261,8 @@ class DataDrivenWorldScene extends Phaser.Scene {
     let main: Phaser.GameObjects.GameObject;
 
     if (this.assetsLoaded) {
-      if (isExit && this.textures.exists('town-tiles')) {
-        main = this.add.image(0, 0, 'town-tiles', KenneyTownFrames.DOOR_CLOSED).setScale(2.5);
+      if (isExit && this.textures.exists('dungeon-tiles')) {
+        main = this.add.image(0, 0, 'dungeon-tiles', KenneyDungeonFrames.DOOR).setScale(2.5);
       } else if (this.textures.exists('dungeon-tiles')) {
         main = this.add.image(0, 0, 'dungeon-tiles', this.frameForType(object.type)).setScale(2);
       } else {
@@ -397,6 +440,7 @@ export class GameWorldComponent implements OnChanges, OnDestroy {
         parent: this.gameHost!.nativeElement,
         width: 960, height: 540,
         backgroundColor: '#0e141a',
+        pixelArt: true,   // nearest-neighbour scaling — keeps pixel art sharp
         scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 960, height: 540 },
         scene: this.scene
       });

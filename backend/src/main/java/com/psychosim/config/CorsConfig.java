@@ -14,9 +14,10 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         var config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "http://localhost",
+        // Patterns allow any localhost port (dev server may use 4200, 57901, etc.)
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
                 "http://psychosim.edu.co"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

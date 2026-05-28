@@ -31,14 +31,16 @@ export const KenneyTownFrames = {
 } as const;
 
 export const KenneyDungeonFrames = {
-  /** Desk / examination table */
-  DESK: 8,
-  /** Chair */
-  CHAIR: 20,
-  /** Filing cabinet */
-  CABINET: 32,
-  /** Plant */
-  PLANT: 44,
+  /** Door / gate icon for EXIT markers — row 0, col 6 (0×12+6=6) */
+  DOOR: 6,
+  /** Desk / table marker — row 6, col 0 (6×12+0=72) */
+  DESK: 72,
+  /** Chair / medical-cross marker — row 5, col 4 (5×12+4=64) */
+  CHAIR: 64,
+  /** Cabinet / chest marker — row 5, col 3 (5×12+3=63) */
+  CABINET: 63,
+  /** Plant / green decoration — row 9, col 0 (9×12+0=108) */
+  PLANT: 108,
 } as const;
 
 export const KenneyCharFrames = {
