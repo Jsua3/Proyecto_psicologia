@@ -167,33 +167,31 @@ class DataDrivenWorldScene extends Phaser.Scene {
     const { width: mapW, height: mapH } = this.world.map;
     this.cameras.main.setBackgroundColor('#0e141a');
 
-    // ── Try Tiled map first ────────────────────────────────────────────────
+    // ── Load Tiled map for object positions ONLY (no tile layers rendered) ─
+    // The tiny-dungeon tile frames are interior/wooden — they look bad as floor fill.
+    // We always draw a clean procedural floor and use Tiled only for object x/y.
     let tiledObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
-    let usingTiled = false;
+    let hasTiledMap = false;
 
     if (this.assetsLoaded) {
       try {
-        const tilemap    = this.make.tilemap({ key: `map-${mapKey}` });
-        const tilesetImg = tilemap.addTilesetImage('tiny-dungeon', 'dungeon-img');
-        if (tilesetImg) {
-          tilemap.createLayer('Floor', tilesetImg)?.setDepth(0);
-          tilemap.createLayer('Walls', tilesetImg)?.setDepth(2);
-          usingTiled = true;
-        }
-        tiledObjects = tilemap.getObjectLayer('Objects')?.objects ?? [];
+        const tilemap = this.make.tilemap({ key: `map-${mapKey}` });
+        tiledObjects  = tilemap.getObjectLayer('Objects')?.objects ?? [];
+        hasTiledMap   = true;
       } catch {
-        // Map JSON not found or tileset error → fall back to procedural rendering
-        usingTiled = false;
+        hasTiledMap = false;
       }
     }
 
-    if (!usingTiled) {
-      // ── Fallback: procedural floor + grid ─────────────────────────────
-      this.add.rectangle(mapW/2, mapH/2, mapW-40, mapH-42, 0x131c28, 1);
-      const g = this.add.graphics();
-      g.lineStyle(1, 0x1c2d3e, 0.65);
-      for (let x = 56; x <= mapW-56; x += 32) g.lineBetween(x, 44, x, mapH-44);
-      for (let y = 56; y <= mapH-56; y += 32) g.lineBetween(44, y, mapW-44, y);
+    // ── Always: clean dark floor + subtle grid ────────────────────────────
+    this.add.rectangle(mapW/2, mapH/2, mapW-40, mapH-42, 0x131c28, 1).setDepth(0);
+    const g = this.add.graphics().setDepth(1);
+    g.lineStyle(1, 0x1c2d3e, 0.65);
+    for (let x = 56; x <= mapW-56; x += 32) g.lineBetween(x, 44, x, mapH-44);
+    for (let y = 56; y <= mapH-56; y += 32) g.lineBetween(44, y, mapW-44, y);
+
+    // Collision-zone panels only when no Tiled layout is available
+    if (!hasTiledMap) {
       this.world.collisions.forEach(zone => this.renderCollisionZone(zone));
     }
     // ─────────────────────────────────────────────────────────────────────
