@@ -167,28 +167,34 @@ class DataDrivenWorldScene extends Phaser.Scene {
     const { width: mapW, height: mapH } = this.world.map;
     this.cameras.main.setBackgroundColor('#0e141a');
 
-    // ── Load Tiled map for object positions ONLY (no tile layers rendered) ─
-    // The tiny-dungeon tile frames are interior/wooden — they look bad as floor fill.
-    // We always draw a clean procedural floor and use Tiled only for object x/y.
-    let tiledObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
-    let hasTiledMap = false;
-
-    if (this.assetsLoaded) {
-      try {
-        const tilemap = this.make.tilemap({ key: `map-${mapKey}` });
-        tiledObjects  = tilemap.getObjectLayer('Objects')?.objects ?? [];
-        hasTiledMap   = true;
-      } catch {
-        hasTiledMap = false;
-      }
-    }
-
-    // ── Always: clean dark floor + subtle grid ────────────────────────────
+    // ── Layer 0-1: procedural dark floor + grid (always — permanent base) ──
+    // Tiled floor tiles sit on top; GID 0 cells (empty) let this base show through.
     this.add.rectangle(mapW/2, mapH/2, mapW-40, mapH-42, 0x131c28, 1).setDepth(0);
     const g = this.add.graphics().setDepth(1);
     g.lineStyle(1, 0x1c2d3e, 0.65);
     for (let x = 56; x <= mapW-56; x += 32) g.lineBetween(x, 44, x, mapH-44);
     for (let y = 56; y <= mapH-56; y += 32) g.lineBetween(44, y, mapW-44, y);
+
+    // ── Layer 2-3: Tiled tile layers (Floor + Walls) if map available ─────
+    // Floor layer starts empty (all GID 0 = transparent).
+    // Open any map in Tiled editor, paint tiles on the Floor layer, save → renders here.
+    let tiledObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
+    let hasTiledMap = false;
+
+    if (this.assetsLoaded) {
+      try {
+        const tilemap    = this.make.tilemap({ key: `map-${mapKey}` });
+        const tilesetImg = tilemap.addTilesetImage('tiny-dungeon', 'dungeon-img');
+        if (tilesetImg) {
+          tilemap.createLayer('Floor', tilesetImg)?.setDepth(2);
+          tilemap.createLayer('Walls', tilesetImg)?.setDepth(3);
+        }
+        tiledObjects = tilemap.getObjectLayer('Objects')?.objects ?? [];
+        hasTiledMap  = true;
+      } catch {
+        hasTiledMap = false;
+      }
+    }
 
     // Collision-zone panels only when no Tiled layout is available
     if (!hasTiledMap) {
@@ -196,9 +202,9 @@ class DataDrivenWorldScene extends Phaser.Scene {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    // Room border + title
+    // Room border (depth 5) + title (depth 6) — always above tile layers (depth 2-3)
     this.add.rectangle(mapW/2, mapH/2, mapW-36, mapH-38)
-      .setStrokeStyle(3, 0x4f7cac, .3).setFillStyle(0x000000, 0).setDepth(3);
+      .setStrokeStyle(3, 0x4f7cac, .3).setFillStyle(0x000000, 0).setDepth(5);
     this.add.text(56, 46, this.world.map.title, {
       fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#9dc0e8', fontStyle: 'bold'
     }).setDepth(6);
