@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -9,7 +10,7 @@ import { Dashboard } from '../../core/models/sesion.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatChipsModule, MatIconModule, MatTableModule],
+  imports: [CommonModule, RouterLink, MatChipsModule, MatIconModule, MatTableModule],
   template: `
     <section class="dashboard-page psy-reveal">
       <div class="dashboard-heading">
@@ -23,6 +24,11 @@ import { Dashboard } from '../../core/models/sesion.model';
             <mat-icon>info</mat-icon>
             API no disponible
           </div>
+        } @else {
+          <a class="psy-button psy-button--primary" routerLink="/portal/simulador">
+            <mat-icon>play_circle</mat-icon>
+            Abrir simulador
+          </a>
         }
       </div>
 

@@ -1,0 +1,12 @@
+package com.psychosim.simulation.infrastructure.persistence;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface SimulationNodeJpaRepository extends JpaRepository<SimulationNodeEntity, Long> {
+    Optional<SimulationNodeEntity> findByCaseVersionIdAndStartNodeTrue(Long caseVersionId);
+
+    List<SimulationNodeEntity> findByCaseVersionIdOrderById(Long caseVersionId);
+}

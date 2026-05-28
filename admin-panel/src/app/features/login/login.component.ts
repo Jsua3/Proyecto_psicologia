@@ -28,11 +28,13 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="visual-copy">
           <a routerLink="/" class="back-link">
             <mat-icon>arrow_back</mat-icon>
-            Facultad de Psicología
+            Psicología Humboldt
           </a>
+          <img class="visual-logo" src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="160" height="80">
           <h1>Portal académico PsychoSim</h1>
           <p>
-            Acceso seguro para simulación, seguimiento docente, analíticas formativas y gestión ética de casos.
+            Acceso seguro para simulación, seguimiento docente, analíticas formativas y gestión ética de casos
+            del Programa de Psicología.
           </p>
         </div>
       </section>
@@ -49,7 +51,7 @@ import { AuthService } from '../../core/auth/auth.service';
             <mat-form-field appearance="outline">
               <mat-label>Correo institucional</mat-label>
               <mat-icon matPrefix>mail</mat-icon>
-              <input matInput type="email" formControlName="email" autocomplete="email" placeholder="nombre@universidad.edu">
+              <input matInput type="email" formControlName="email" autocomplete="email" placeholder="usuario@cue.edu.co">
               @if (form.controls.email.hasError('required')) {
                 <mat-error>El correo es obligatorio.</mat-error>
               }
@@ -71,7 +73,7 @@ import { AuthService } from '../../core/auth/auth.service';
             </mat-form-field>
 
             <div class="form-options">
-              <a href="mailto:soporte@universidad.edu">Recuperar contraseña</a>
+              <a href="mailto:secretariapsicologia@cue.edu.co">Recuperar contraseña</a>
               <span class="psy-mono">SSO habilitado</span>
             </div>
 
@@ -120,23 +122,33 @@ import { AuthService } from '../../core/auth/auth.service';
       padding: clamp(28px, 5vw, 58px);
       overflow: hidden;
       background:
-        linear-gradient(180deg, rgba(36,50,58,.1), rgba(36,50,58,.68)),
-        url('/assets/images/psychology-faculty-hero.png') center/cover no-repeat;
+        linear-gradient(180deg, rgba(36,50,58,.08), rgba(36,50,58,.68)),
+        url('/assets/images/institution/psychology-program-hero.png') center/cover no-repeat;
     }
     .login-visual::after {
       content: '';
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 30% 22%, rgba(79,163,165,.34), transparent 34%),
+        radial-gradient(circle at 30% 22%, rgba(79,163,165,.32), transparent 34%),
         radial-gradient(circle at 78% 74%, rgba(169,155,214,.28), transparent 30%);
       pointer-events: none;
     }
     .visual-copy {
       position: relative;
       z-index: 1;
-      max-width: 620px;
+      max-width: 640px;
       color: white;
+    }
+    .visual-logo {
+      width: 160px;
+      height: auto;
+      margin-top: 28px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.84);
+      border: 1px solid rgba(255,255,255,.36);
+      box-shadow: 0 22px 44px -28px rgba(0,0,0,.48);
     }
     .back-link {
       display: inline-flex;
@@ -159,9 +171,9 @@ import { AuthService } from '../../core/auth/auth.service';
       letter-spacing: 0;
     }
     .visual-copy p {
-      max-width: 540px;
+      max-width: 560px;
       margin: 0;
-      color: rgba(255,255,255,.84);
+      color: rgba(255,255,255,.86);
       font-size: 1.1rem;
       line-height: 1.65;
     }

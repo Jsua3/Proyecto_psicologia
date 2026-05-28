@@ -5,6 +5,9 @@ import { RouterOutlet } from '@angular/router';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet],
-  template: '<router-outlet />'
+  template: `
+    <a class="psy-skip-link" href="#main-content">Saltar al contenido principal</a>
+    <router-outlet />
+  `
 })
 export class AppComponent {}

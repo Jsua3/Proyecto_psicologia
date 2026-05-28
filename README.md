@@ -1,6 +1,6 @@
 # PsychoSim
 
-Plataforma web institucional para la Facultad de Psicología: simulación gamificada, evaluación formativa, bienestar, investigación y seguimiento docente.
+Plataforma web institucional para el Programa de Psicología de la Corporación Universitaria Empresarial Alexander Von Humboldt: simulación gamificada, evaluación formativa, bienestar, investigación y seguimiento docente.
 
 ## Arquitectura
 
@@ -12,7 +12,7 @@ Plataforma web institucional para la Facultad de Psicología: simulación gamifi
 | Base de datos | PostgreSQL 16 (producción) / H2 (tests) |
 | Infraestructura | Docker Compose + Nginx + GitHub Actions |
 
-## Inicio rápido
+## Inicio Rápido
 
 ### Con Docker Compose
 
@@ -21,21 +21,46 @@ docker compose up -d
 ```
 
 - Web / Portal: http://localhost
-- API: http://localhost/api
-- Swagger UI: http://localhost:8080/swagger-ui.html
+- API vía Nginx: http://localhost/api
+- API backend en host: http://localhost:8090
+- Swagger UI: http://localhost:8090/swagger-ui.html
 
-### Credenciales por defecto
+### Credenciales Por Defecto
 
 - Email: `admin@psychosim.edu.co`
 - Password: `Admin123!`
+- Email estudiante demo: `estudiante@psychosim.edu.co`
+- Password estudiante demo: `Estudiante123!`
+- Email docente demo: `profesora@psychosim.edu.co`
+- Password docente demo: `Profesor123!`
 
-## Desarrollo local
+## Simulador Jugable
+
+El portal incluye un primer flujo de juego serio en `Portal -> Simulador`. La experiencia esta disenada como una mision clinica explorable con Phaser, no como un examen de opciones ABCD:
+
+- catálogo de casos publicados,
+- inicio de intento con token de juego,
+- escenas tipo grafo DAG,
+- mapa top-down donde el estudiante puede moverse por el caso,
+- interaccion con personas, objetos, rutas y herramientas del entorno,
+- dialogos contextuales activados con `E`, `Espacio` o `Enter`,
+- HUD con puntaje profesional, estres de escena y estado del intento,
+- mapa de mision, escena visual y dialogos contextuales,
+- herramientas profesionales activables,
+- acciones de intervencion con retroalimentacion inmediata de supervision,
+- bitacora reflexiva cifrada en backend,
+- salida segura,
+- cierre automatico al llegar a un nodo terminal.
+
+## Desarrollo Local
 
 ### Backend
 
+El backend corre por defecto en `8080`, pero en este workspace se usa `8090` porque `8080` está ocupado por un proceso local `httpd`.
+
 ```bash
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=8090
 ```
 
 ### Admin Panel
@@ -48,7 +73,7 @@ ng serve
 
 Frontend local: http://localhost:4200
 
-El proxy local apunta a `http://localhost:8080`.
+El proxy local apunta a `http://localhost:8090`.
 
 ### Cliente JavaFX
 
@@ -59,15 +84,15 @@ mvn javafx:run
 
 El cliente JavaFX se conserva como legado durante la migración, pero el producto principal pasa a ser la experiencia web Angular.
 
-## Estructura del proyecto
+## Estructura Del Proyecto
 
-```
+```text
 psychosim/
-├── backend/          ← Spring Boot (Maven)
-├── client/           ← JavaFX + Phaser 3 (legado)
-├── admin-panel/      ← Angular 21
-├── docker/           ← Dockerfiles + nginx.conf
-├── docs/             ← Prompt maestro y documentación de transformación
+├── backend/          <- Spring Boot (Maven)
+├── client/           <- JavaFX + Phaser 3 (legado)
+├── admin-panel/      <- Angular 21
+├── docker/           <- Dockerfiles + nginx.conf
+├── docs/             <- Prompt maestro y documentación de transformación
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
 ```

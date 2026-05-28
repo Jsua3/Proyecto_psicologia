@@ -11,17 +11,26 @@ interface SectionCard {
   tag: string;
 }
 
+interface Stat {
+  value: string;
+  label: string;
+}
+
+const PSYCHOLOGY_PROGRAM_URL =
+  'https://unihumboldt.edu.co/es/pregrados/facultad-de-ciencias-humanas-y-de-la-educacion/psicologia';
+const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
+
 @Component({
   selector: 'app-landing',
   standalone: true,
   imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule],
   template: `
     <nav class="psy-public-nav liquid-glass" aria-label="Navegación pública">
-      <a class="brand" href="#inicio" aria-label="Facultad de Psicología">
-        <span class="brand-mark">Ψ</span>
+      <a class="brand" href="#inicio" aria-label="Programa de Psicología Humboldt">
+        <img src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="74" height="37">
         <span>
-          <strong>Facultad de Psicología</strong>
-          <small>[NOMBRE_UNIVERSIDAD]</small>
+          <strong>Psicología Humboldt</strong>
+          <small>Facultad de Ciencias Humanas y de la Educación</small>
         </span>
       </a>
 
@@ -30,12 +39,12 @@ interface SectionCard {
       </button>
 
       <div class="nav-links" [class.nav-links--open]="menuOpen()">
-        <a href="#programas">Programas</a>
-        <a href="#clinica">Atención</a>
+        <a href="#programa">Programa</a>
+        <a href="#clinica">CIP</a>
         <a href="#investigacion">Investigación</a>
         <a href="#bienestar">Bienestar</a>
         <a href="#contacto">Contacto</a>
-        <a class="portal-link" routerLink="/login">Portal académico</a>
+        <a class="portal-link" routerLink="/login">Portal PsychoSim</a>
       </div>
     </nav>
 
@@ -43,29 +52,34 @@ interface SectionCard {
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-overlay"></div>
         <div class="hero-content psy-reveal">
-          <p class="psy-eyebrow">Ciencia, escucha y bienestar humano</p>
-          <h1 id="hero-title" class="psy-title">Facultad de Psicología</h1>
+          <p class="psy-eyebrow">Corporación Universitaria Empresarial Alexander Von Humboldt</p>
+          <h1 id="hero-title" class="psy-title">Programa de Psicología</h1>
           <p class="psy-subtitle">
-            Formación, investigación, práctica profesional y servicio a la comunidad desde una mirada ética,
-            rigurosa y profundamente humana.
+            Formación profesional acreditada en alta calidad, con práctica en contextos reales, investigación,
+            proyección social y acompañamiento humano desde Armenia, Quindío.
           </p>
+          <div class="hero-badges" aria-label="Reconocimientos del programa">
+            <span class="psy-chip">SNIES 101645</span>
+            <span class="psy-chip">Alta Calidad MEN</span>
+            <span class="psy-chip">Presencial en Armenia</span>
+          </div>
           <div class="psy-action-row hero-actions">
-            <a class="psy-button psy-button--primary" href="#programas">
+            <a class="psy-button psy-button--primary" [href]="psychologyProgramUrl" target="_blank" rel="noopener">
               <mat-icon>school</mat-icon>
-              Conoce los programas
+              Conoce el programa
             </a>
-            <a class="psy-button psy-button--glass" href="#contacto">
-              <mat-icon>event_available</mat-icon>
-              Agenda orientación
+            <a class="psy-button psy-button--glass" href="#clinica">
+              <mat-icon>psychology</mat-icon>
+              Centro Integral de Psicología
             </a>
-            <a class="psy-button psy-button--ghost" href="#investigacion">
-              <mat-icon>biotech</mat-icon>
-              Explora investigación
+            <a class="psy-button psy-button--ghost" routerLink="/login">
+              <mat-icon>login</mat-icon>
+              Ingresar al portal
             </a>
           </div>
         </div>
 
-        <div class="metrics liquid-glass" aria-label="Indicadores de la Facultad">
+        <div class="metrics liquid-glass" aria-label="Indicadores oficiales del programa">
           @for (metric of metrics; track metric.label) {
             <div class="metric">
               <strong>{{ metric.value }}</strong>
@@ -74,22 +88,32 @@ interface SectionCard {
           }
         </div>
 
-        <a class="next-cue" href="#programas" aria-label="Ir a programas académicos">
+        <a class="next-cue" href="#programa" aria-label="Ir a datos del programa">
           <mat-icon>keyboard_arrow_down</mat-icon>
         </a>
       </section>
 
-      <section id="programas" class="psy-section">
+      <section id="programa" class="psy-section">
         <div class="psy-section__inner split">
           <div>
-            <p class="psy-eyebrow">Programas académicos</p>
-            <h2 class="section-title">Formación con rigor científico y sensibilidad social.</h2>
+            <p class="psy-eyebrow">Pregrado acreditado</p>
+            <h2 class="section-title">Psicología con excelencia académica, práctica y sentido social.</h2>
           </div>
           <p class="section-copy">
-            Nuestros programas articulan fundamentos teóricos, laboratorios, simulación, práctica supervisada
-            y aprendizaje basado en casos para formar profesionales capaces de escuchar, investigar e intervenir.
+            El programa articula teoría, investigación, laboratorios, práctica profesional, proyección social y
+            formación ética. Su modelo pedagógico promueve construcción colectiva del conocimiento, autonomía
+            estudiantil y lectura crítica del territorio.
           </p>
         </div>
+
+        <div class="psy-section__inner official-strip liquid-glass">
+          <div>
+            <span class="psy-chip">Sello ASCOFAPSI</span>
+            <h3>Reconocimiento disciplinar y cultura de calidad.</h3>
+          </div>
+          <img src="/assets/images/institution/ascofapsi-logo.png" alt="Sello ASCOFAPSI" width="150" height="83">
+        </div>
+
         <div class="psy-section__inner psy-grid psy-grid--3 card-row">
           @for (program of programs; track program.title) {
             <article class="psy-card liquid-tilt">
@@ -103,19 +127,35 @@ interface SectionCard {
       </section>
 
       <section id="clinica" class="psy-section soft-band">
-        <div class="psy-section__inner feature-band liquid-glass">
-          <div>
-            <p class="psy-eyebrow">Clínica y centro de atención</p>
-            <h2 class="section-title">Acompañamiento psicológico universitario, ético y supervisado.</h2>
+        <div class="psy-section__inner cip-layout">
+          <div class="cip-copy">
+            <p class="psy-eyebrow">Centro Integral de Psicología</p>
+            <h2 class="section-title">Atención, evaluación y acompañamiento psicológico desde la universidad.</h2>
             <p class="section-copy">
-              El centro integra orientación, escucha inicial, rutas de apoyo y práctica profesional bajo criterios
-              de confidencialidad, supervisión docente y cuidado del consultante.
+              El CIP integra servicios de atención psicológica, neuropsicología y espacios formativos para la
+              comunidad, con un enfoque de cuidado, confidencialidad, supervisión académica y rutas institucionales.
             </p>
+            <div class="psy-action-row">
+              <a class="psy-button psy-button--primary" [href]="cipUrl" target="_blank" rel="noopener">
+                <mat-icon>open_in_new</mat-icon>
+                Ver CIP oficial
+              </a>
+              <a class="psy-button psy-button--ghost" href="mailto:secretariacip@cue.edu.co">
+                <mat-icon>mail</mat-icon>
+                secretariacip@cue.edu.co
+              </a>
+            </div>
           </div>
-          <div class="feature-list" aria-label="Servicios del centro">
-            <span><mat-icon>psychology</mat-icon> Orientación psicológica</span>
-            <span><mat-icon>groups</mat-icon> Acompañamiento comunitario</span>
-            <span><mat-icon>verified_user</mat-icon> Rutas de protección</span>
+          <div class="cip-panel liquid-glass" aria-label="Indicadores del Centro Integral de Psicología">
+            <img src="/assets/images/institution/cip-banner.webp" alt="Imagen del Centro Integral de Psicología" width="620" height="349">
+            <div class="cip-stats">
+              @for (stat of cipStats; track stat.label) {
+                <div>
+                  <strong>{{ stat.value }}</strong>
+                  <span>{{ stat.label }}</span>
+                </div>
+              }
+            </div>
           </div>
         </div>
       </section>
@@ -124,11 +164,11 @@ interface SectionCard {
         <div class="psy-section__inner split">
           <div>
             <p class="psy-eyebrow">Investigación y semilleros</p>
-            <h2 class="section-title">Preguntas vivas sobre bienestar, comunidad y aprendizaje.</h2>
+            <h2 class="section-title">Preguntas vivas sobre salud mental, comunidad y aprendizaje.</h2>
           </div>
           <p class="section-copy">
-            Los semilleros conectan métodos científicos, análisis de datos, intervención psicosocial y ética
-            aplicada para fortalecer decisiones basadas en evidencia.
+            La Humboldt conecta dirección de investigaciones, semilleros, grupos y líneas de investigación con
+            prácticas formativas del programa. PsychoSim toma esa vocación y la convierte en simulación evaluable.
           </p>
         </div>
         <div class="psy-section__inner psy-grid psy-grid--4 card-row">
@@ -146,10 +186,10 @@ interface SectionCard {
         <div class="psy-section__inner support-layout">
           <div>
             <p class="psy-eyebrow">Bienestar y rutas de apoyo</p>
-            <h2 class="section-title">Recursos claros para momentos que requieren cuidado.</h2>
+            <h2 class="section-title">Una experiencia académica que escucha y orienta.</h2>
             <p class="section-copy">
-              La experiencia académica incorpora rutas de orientación, salida segura, recursos de apoyo y lenguaje
-              no estigmatizante para estudiantes, consultantes y comunidad.
+              El portal debe mantener salida segura, lenguaje no estigmatizante, confidencialidad y recursos de
+              apoyo para estudiantes, docentes, consultantes y comunidad.
             </p>
           </div>
           <div class="support-panel liquid-glass">
@@ -166,19 +206,19 @@ interface SectionCard {
       <section class="psy-section">
         <div class="psy-section__inner psy-grid psy-grid--3">
           <article class="psy-card editorial-card" id="docentes">
-            <span class="psy-chip">Docentes y grupos</span>
-            <h3>Mentoría académica con mirada interdisciplinar.</h3>
-            <p>Equipos docentes acompañan laboratorios, práctica, evaluación auténtica y proyectos de impacto social.</p>
+            <span class="psy-chip">Docentes y colaboradores</span>
+            <h3>Equipo académico con trayectoria clínica, jurídica, social e investigativa.</h3>
+            <p>La página oficial del programa reúne docentes, coordinación académica, prácticas, laboratorios, CIP e investigación.</p>
           </article>
           <article class="psy-card editorial-card" id="eventos">
             <span class="psy-chip">Eventos y noticias</span>
-            <h3>Conversaciones que conectan aula, investigación y territorio.</h3>
-            <p>Seminarios, jornadas, encuentros de semilleros y espacios de divulgación para la comunidad académica.</p>
+            <h3>Seminarios y conversaciones que llevan el aula al territorio.</h3>
+            <p>La agenda Humboldt incluye espacios de investigación, salud mental, psicología y divulgación académica.</p>
           </article>
           <article class="psy-card editorial-card" id="admisiones">
             <span class="psy-chip">Admisiones</span>
-            <h3>Un ingreso acompañado, claro y cercano.</h3>
-            <p>Orientación vocacional, información de programas y acompañamiento para aspirantes y familias.</p>
+            <h3>Ingreso semestral con orientación para aspirantes y familias.</h3>
+            <p>El programa solicita entrevista, examen de admisión, soporte documental y proceso de preinscripción institucional.</p>
           </article>
         </div>
       </section>
@@ -186,20 +226,21 @@ interface SectionCard {
       <section id="contacto" class="psy-section contact-section">
         <div class="psy-section__inner contact-card liquid-glass">
           <div>
-            <p class="psy-eyebrow">Contacto</p>
-            <h2 class="section-title">Hablemos sobre tu proceso académico.</h2>
+            <p class="psy-eyebrow">Contacto institucional</p>
+            <h2 class="section-title">PsychoSim queda alineado con Psicología Humboldt.</h2>
             <p class="section-copy">
-              Recibe orientación sobre programas, práctica profesional, investigación, bienestar o acceso al portal.
+              Usa este portal para simulación, seguimiento formativo, rúbricas, bitácoras y analíticas académicas.
+              Para información oficial del programa, consulta los canales de la universidad.
             </p>
           </div>
           <div class="contact-actions">
-            <a class="psy-button psy-button--primary" href="mailto:psicologia@universidad.edu">
+            <a class="psy-button psy-button--primary" href="mailto:secretariapsicologia@cue.edu.co">
               <mat-icon>mail</mat-icon>
-              psicologia@universidad.edu
+              secretariapsicologia@cue.edu.co
             </a>
-            <a class="psy-button psy-button--ghost" routerLink="/login">
-              <mat-icon>login</mat-icon>
-              Ingresar al portal
+            <a class="psy-button psy-button--ghost" [href]="psychologyProgramUrl" target="_blank" rel="noopener">
+              <mat-icon>open_in_new</mat-icon>
+              Sitio oficial
             </a>
           </div>
         </div>
@@ -214,17 +255,11 @@ interface SectionCard {
       color: var(--psy-ink);
       min-height: 44px;
     }
-    .brand-mark {
-      display: grid;
-      place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(79,124,172,.18), rgba(79,163,165,.2));
-      color: var(--psy-blue-deep);
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.8rem;
-      font-weight: 700;
+    .brand img {
+      width: 74px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 14px rgba(36,50,58,.12));
     }
     .brand strong,
     .brand small {
@@ -232,7 +267,7 @@ interface SectionCard {
       line-height: 1.1;
     }
     .brand strong { font-size: .98rem; }
-    .brand small { color: var(--psy-muted); font-size: .76rem; margin-top: 2px; }
+    .brand small { color: var(--psy-muted); font-size: .74rem; margin-top: 2px; }
     .nav-links {
       display: flex;
       align-items: center;
@@ -261,24 +296,30 @@ interface SectionCard {
       padding: calc(var(--psy-header-h) + 56px) clamp(18px, 5vw, 70px) 118px;
       overflow: hidden;
       background:
-        linear-gradient(90deg, rgba(244,247,250,.96) 0%, rgba(244,247,250,.8) 42%, rgba(234,241,244,.42) 100%),
+        linear-gradient(90deg, rgba(244,247,250,.96) 0%, rgba(244,247,250,.82) 38%, rgba(234,241,244,.32) 100%),
         linear-gradient(180deg, rgba(47,95,143,.08), rgba(79,163,165,.16)),
-        url('/assets/images/psychology-faculty-hero.png') center/cover no-repeat;
+        url('/assets/images/institution/psychology-program-hero.png') center/cover no-repeat;
     }
     .hero-overlay {
       position: absolute;
       inset: 0;
       background:
         radial-gradient(circle at 16% 30%, rgba(169,155,214,.22), transparent 30%),
-        radial-gradient(circle at 78% 62%, rgba(140,191,166,.22), transparent 32%);
+        radial-gradient(circle at 78% 62%, rgba(140,191,166,.2), transparent 32%);
       pointer-events: none;
     }
     .hero-content {
       position: relative;
       z-index: 1;
-      width: min(780px, 100%);
+      width: min(820px, 100%);
     }
-    .hero .psy-title { max-width: 720px; }
+    .hero .psy-title { max-width: 760px; }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 22px;
+    }
     .hero-actions { margin-top: 30px; }
     .metrics {
       position: absolute;
@@ -288,7 +329,7 @@ interface SectionCard {
       display: grid;
       grid-template-columns: repeat(4, minmax(104px, 1fr));
       gap: 1px;
-      width: min(690px, calc(100% - 36px));
+      width: min(720px, calc(100% - 36px));
       border-radius: 18px;
       overflow: hidden;
     }
@@ -299,7 +340,7 @@ interface SectionCard {
     .metric strong {
       display: block;
       color: var(--psy-blue-deep);
-      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-size: clamp(1.35rem, 3vw, 2.05rem);
       line-height: 1;
     }
     .metric span {
@@ -344,6 +385,26 @@ interface SectionCard {
       font-size: 1.05rem;
       line-height: 1.7;
     }
+    .official-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 28px;
+      padding: 22px;
+      border-radius: 18px;
+    }
+    .official-strip h3 {
+      margin: 12px 0 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      line-height: 1.05;
+    }
+    .official-strip img {
+      width: 150px;
+      height: auto;
+      object-fit: contain;
+    }
     .card-row { margin-top: 26px; }
     .psy-card mat-icon {
       margin-top: 18px;
@@ -352,34 +413,48 @@ interface SectionCard {
     .soft-band {
       background: linear-gradient(180deg, rgba(234,241,244,.62), rgba(244,247,250,.36));
     }
-    .feature-band {
+    .cip-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 360px;
+      grid-template-columns: minmax(0, .8fr) minmax(360px, .75fr);
       gap: 34px;
       align-items: center;
-      padding: clamp(26px, 5vw, 54px);
-      border-radius: 20px;
     }
-    .feature-list {
+    .cip-copy {
       display: grid;
-      gap: 12px;
+      gap: 24px;
     }
-    .feature-list span,
-    .support-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 48px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.58);
-      color: var(--psy-ink);
-      font-weight: 600;
+    .cip-panel {
+      overflow: hidden;
+      border-radius: 22px;
+      padding: 0;
     }
-    .feature-list mat-icon,
-    .support-item mat-icon {
-      color: var(--psy-green-deep);
-      flex: 0 0 auto;
+    .cip-panel img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+    .cip-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: rgba(47,95,143,.12);
+    }
+    .cip-stats div {
+      padding: 18px;
+      background: rgba(255,255,255,.66);
+    }
+    .cip-stats strong {
+      display: block;
+      color: var(--psy-blue-deep);
+      font-size: 2rem;
+      line-height: 1;
+    }
+    .cip-stats span {
+      display: block;
+      margin-top: 6px;
+      color: var(--psy-muted);
+      line-height: 1.35;
     }
     .compact-card { min-height: 230px; }
     .support-layout {
@@ -393,6 +468,21 @@ interface SectionCard {
       gap: 10px;
       padding: 18px;
       border-radius: 18px;
+    }
+    .support-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.58);
+      color: var(--psy-ink);
+      font-weight: 600;
+    }
+    .support-item mat-icon {
+      color: var(--psy-green-deep);
+      flex: 0 0 auto;
     }
     .editorial-card {
       min-height: 250px;
@@ -417,7 +507,13 @@ interface SectionCard {
     .contact-actions {
       display: grid;
       gap: 12px;
-      min-width: 280px;
+      min-width: 300px;
+    }
+    @media (max-width: 1020px) {
+      .brand small { display: none; }
+      .nav-links a {
+        padding-inline: 10px;
+      }
     }
     @media (max-width: 920px) {
       .nav-toggle { display: inline-grid; }
@@ -450,7 +546,7 @@ interface SectionCard {
         width: auto;
       }
       .split,
-      .feature-band,
+      .cip-layout,
       .support-layout,
       .contact-card {
         grid-template-columns: 1fr;
@@ -459,24 +555,29 @@ interface SectionCard {
         min-width: 0;
       }
     }
-    @media (max-width: 520px) {
+    @media (max-width: 560px) {
       .psy-public-nav {
         top: 10px;
         width: calc(100% - 20px);
       }
-      .brand small { display: none; }
+      .brand img { width: 58px; }
       .hero {
         padding-top: 122px;
-        background-position: 58% center;
+        background-position: 56% center;
       }
-      .metrics {
+      .metrics,
+      .cip-stats {
         grid-template-columns: 1fr 1fr;
       }
       .metric {
         padding: 14px 12px;
       }
-      .hero-actions .psy-button {
+      .hero-actions .psy-button,
+      .cip-copy .psy-button {
         width: 100%;
+      }
+      .official-strip {
+        display: grid;
       }
       .next-cue {
         display: none;
@@ -485,47 +586,54 @@ interface SectionCard {
   `]
 })
 export class LandingComponent {
-  menuOpen = signal(false);
+  readonly menuOpen = signal(false);
+  readonly psychologyProgramUrl = PSYCHOLOGY_PROGRAM_URL;
+  readonly cipUrl = CIP_URL;
 
-  metrics = [
-    { value: '25+', label: 'años de trayectoria' },
-    { value: '12', label: 'semilleros activos' },
-    { value: '38', label: 'convenios de práctica' },
-    { value: '4.800+', label: 'egresados' }
+  readonly metrics: Stat[] = [
+    { value: '101645', label: 'Código SNIES' },
+    { value: '8', label: 'semestres' },
+    { value: '160', label: 'créditos académicos' },
+    { value: '6 años', label: 'acreditación alta calidad' }
   ];
 
-  programs: SectionCard[] = [
+  readonly cipStats: Stat[] = [
+    { value: '735', label: 'personas atendidas' },
+    { value: '1230', label: 'atenciones efectivas' }
+  ];
+
+  readonly programs: SectionCard[] = [
     {
       icon: 'psychology',
-      title: 'Pregrado en Psicología',
-      text: 'Formación integral en fundamentos científicos, evaluación, intervención y responsabilidad social.',
-      tag: 'Pregrado'
+      title: 'Psicólogo(a)',
+      text: 'Título profesional universitario con formación integral en evaluación, intervención, investigación y ética.',
+      tag: 'Título'
     },
     {
-      icon: 'clinical_notes',
-      title: 'Práctica profesional supervisada',
-      text: 'Escenarios de aprendizaje auténtico con rutas de cuidado, evaluación formativa y acompañamiento docente.',
-      tag: 'Práctica'
+      icon: 'location_city',
+      title: 'Presencial en Armenia',
+      text: 'Jornada diurna, ingreso semestral y experiencias formativas conectadas con contextos reales del territorio.',
+      tag: 'Modalidad'
     },
     {
       icon: 'hub',
-      title: 'Educación continua',
-      text: 'Diplomados y cursos para fortalecer competencias en crisis, comunidad, bienestar y ética aplicada.',
-      tag: 'Extensión'
+      title: 'Modelo constructivista',
+      text: 'Aprendizaje participativo e interactivo para aplicar conocimiento psicológico en diversos contextos.',
+      tag: 'Pedagogía'
     }
   ];
 
-  researchLines: SectionCard[] = [
-    { icon: 'monitoring', title: 'Salud mental', text: 'Bienestar, prevención y cuidado en contextos educativos.', tag: '' },
-    { icon: 'diversity_3', title: 'Psicología social', text: 'Territorio, comunidad, convivencia y derechos humanos.', tag: '' },
-    { icon: 'science', title: 'Métodos y datos', text: 'Diseños de investigación, medición y analítica académica.', tag: '' },
-    { icon: 'school', title: 'Aprendizaje', text: 'Simulación, evaluación auténtica y práctica deliberada.', tag: '' }
+  readonly researchLines: SectionCard[] = [
+    { icon: 'monitoring', title: 'Salud mental', text: 'Lectura de riesgos, bienestar y rutas de apoyo basadas en evidencia.', tag: '' },
+    { icon: 'diversity_3', title: 'Psicología social', text: 'Comunidad, convivencia, conflicto, derechos humanos y territorio.', tag: '' },
+    { icon: 'science', title: 'Métodos y datos', text: 'Medición, evaluación, análisis de casos y trazabilidad académica.', tag: '' },
+    { icon: 'school', title: 'Simulación', text: 'Práctica deliberada, bitácoras, rúbricas y retroalimentación docente.', tag: '' }
   ];
 
-  supportRoutes = [
-    'Orientación inicial y remisión institucional.',
-    'Salida segura y recursos de apoyo en casos sensibles.',
-    'Lenguaje ético, no estigmatizante y centrado en derechos.',
-    'Acompañamiento para estudiantes, docentes y comunidad.'
+  readonly supportRoutes = [
+    'Salida segura y recursos institucionales en casos sensibles.',
+    'Bitácoras protegidas, confidencialidad y trazabilidad ética.',
+    'Lenguaje claro, humano y centrado en derechos.',
+    'Acompañamiento para estudiantes, docentes, consultantes y comunidad.'
   ];
 }

@@ -33,6 +33,22 @@ export const routes: Routes = [
         loadComponent: () => import('./features/casos/caso-form.component').then(m => m.CasoFormComponent)
       },
       {
+        path: 'simulador',
+        loadComponent: () => import('./features/simulator/simulation-catalog.component').then(m => m.SimulationCatalogComponent)
+      },
+      {
+        path: 'simulador/:caseVersionId',
+        loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
+      },
+      {
+        path: 'casos/:caseVersionId/editor',
+        loadComponent: () => import('./features/simulator/case-editor.component').then(m => m.CaseEditorComponent)
+      },
+      {
+        path: 'docente/trazabilidad',
+        loadComponent: () => import('./features/simulator/instructor-trace.component').then(m => m.InstructorTraceComponent)
+      },
+      {
         path: 'grupos',
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
       },
@@ -44,6 +60,8 @@ export const routes: Routes = [
   },
   { path: 'dashboard', redirectTo: 'portal/dashboard', pathMatch: 'full' },
   { path: 'casos', redirectTo: 'portal/casos', pathMatch: 'full' },
+  { path: 'simulador', redirectTo: 'portal/simulador', pathMatch: 'full' },
+  { path: 'docente', redirectTo: 'portal/docente/trazabilidad', pathMatch: 'full' },
   { path: 'grupos', redirectTo: 'portal/grupos', pathMatch: 'full' },
   { path: 'reportes', redirectTo: 'portal/reportes', pathMatch: 'full' },
   { path: '**', redirectTo: 'dashboard' }
