@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, roleGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -22,14 +22,17 @@ export const routes: Routes = [
       },
       {
         path: 'casos',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/casos/caso-list.component').then(m => m.CasoListComponent)
       },
       {
         path: 'casos/nuevo',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/casos/caso-form.component').then(m => m.CasoFormComponent)
       },
       {
         path: 'casos/:id/editar',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/casos/caso-form.component').then(m => m.CasoFormComponent)
       },
       {
@@ -38,22 +41,27 @@ export const routes: Routes = [
       },
       {
         path: 'simulador/:caseVersionId',
+        canActivate: [roleGuard('ESTUDIANTE', 'ADMIN')],
         loadComponent: () => import('./features/simulator/simulation-play.component').then(m => m.SimulationPlayComponent)
       },
       {
         path: 'casos/:caseVersionId/editor',
+        canActivate: [roleGuard('ADMIN')],
         loadComponent: () => import('./features/simulator/case-editor.component').then(m => m.CaseEditorComponent)
       },
       {
         path: 'docente/trazabilidad',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/simulator/instructor-trace.component').then(m => m.InstructorTraceComponent)
       },
       {
         path: 'grupos',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/grupos/grupo-list.component').then(m => m.GrupoListComponent)
       },
       {
         path: 'reportes',
+        canActivate: [roleGuard('PROFESOR', 'ADMIN')],
         loadComponent: () => import('./features/reportes/reporte-grupo.component').then(m => m.ReporteGrupoComponent)
       }
     ]

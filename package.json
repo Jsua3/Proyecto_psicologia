@@ -1,0 +1,16 @@
+{
+  "name": "psychosim",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "up": "node scripts/up.mjs",
+    "up:docker": "docker compose up -d --build",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f db backend",
+    "postinstall": "npm install --prefix admin-panel"
+  },
+  "devDependencies": {
+    "wait-on": "^8.0.3"
+  }
+}

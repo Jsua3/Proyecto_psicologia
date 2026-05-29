@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import {
   AttemptTrace,
+  AttemptCompletionReport,
   CaseEditorView,
   ChecklistUpdateRequest,
   DecisionOptionUpsertRequest,
@@ -14,6 +15,7 @@ import {
   RubricEvaluationView,
   SimulationAttemptState,
   SimulationCaseSummary,
+  ProgressMapState,
   SimulationWorldState,
   ToolUpsertRequest,
   ToolUseResult,
@@ -36,8 +38,20 @@ export class SimulationService {
       .pipe(map(response => response.data));
   }
 
-  startAttempt(caseVersionId: number) {
-    return this.http.post<ApiResponse<SimulationAttemptState>>(`${this.API}/attempts`, { caseVersionId })
+  startAttempt(caseVersionId: number, forceNew = false) {
+    return this.http.post<ApiResponse<SimulationAttemptState>>(`${this.API}/attempts`, { caseVersionId, forceNew })
+      .pipe(map(response => response.data));
+  }
+
+  getActiveAttempt(caseVersionId: number) {
+    return this.http.get<ApiResponse<SimulationAttemptState>>(`${this.API}/cases/${caseVersionId}/active-attempt`, {
+      observe: 'response'
+    }).pipe(map(response => response.status === 204 ? null : response.body!.data));
+  }
+
+  getProgressMap(attemptId: string, attemptToken: string) {
+    const params = new HttpParams().set('attemptToken', attemptToken);
+    return this.http.get<ApiResponse<ProgressMapState>>(`${this.API}/attempts/${attemptId}/progress-map`, { params })
       .pipe(map(response => response.data));
   }
 
@@ -96,6 +110,12 @@ export class SimulationService {
       attemptToken,
       reason
     }).pipe(map(response => response.data));
+  }
+
+  getCompletionReport(attemptId: string, attemptToken: string) {
+    const params = new HttpParams().set('attemptToken', attemptToken);
+    return this.http.get<ApiResponse<AttemptCompletionReport>>(`${this.API}/attempts/${attemptId}/completion-report`, { params })
+      .pipe(map(response => response.data));
   }
 
   recentAttempts() {

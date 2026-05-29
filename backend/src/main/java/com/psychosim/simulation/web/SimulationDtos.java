@@ -19,7 +19,7 @@ public final class SimulationDtos {
     ) {
     }
 
-    public record StartAttemptRequest(Long caseVersionId) {
+    public record StartAttemptRequest(Long caseVersionId, Boolean forceNew) {
     }
 
     public record SelectDecisionRequest(String attemptToken, Long decisionOptionId) {
@@ -39,9 +39,26 @@ public final class SimulationDtos {
             String status,
             int accumulatedScore,
             int stressIndex,
+            SimulationMetrics metrics,
             NodeState currentNode,
             Feedback feedback,
+            AttemptCompletionReport completionReport,
             List<String> supportResources
+    ) {
+    }
+
+    public record ProgressMapNode(
+            String key,
+            String label,
+            boolean start,
+            boolean terminal
+    ) {
+    }
+
+    public record ProgressMapState(
+            List<ProgressMapNode> nodes,
+            List<String> visitedNodeKeys,
+            String currentNodeKey
     ) {
     }
 
@@ -72,9 +89,44 @@ public final class SimulationDtos {
             String classification,
             int scoreDelta,
             int stressDelta,
+            int trustDelta,
+            int victimRiskDelta,
             boolean prohibitedConduct,
+            boolean institutionalRouteActivated,
+            boolean revictimizationRisk,
             String message,
             String prohibitionReason
+    ) {
+    }
+
+    public record SimulationMetrics(
+            int professionalScore,
+            int sceneStress,
+            int victimRisk,
+            int userTrust,
+            boolean institutionalRouteActivated,
+            boolean revictimizationRisk
+    ) {
+    }
+
+    public record AttemptCompletionReport(
+            UUID attemptId,
+            String caseTitle,
+            String status,
+            int finalScore,
+            int finalStress,
+            SimulationMetrics metrics,
+            int adequateDecisions,
+            int riskyDecisions,
+            int inadequateDecisions,
+            int prohibitedDecisions,
+            int toolsUsed,
+            int reflectionsCount,
+            boolean safeExitUsed,
+            List<String> visitedNodeTitles,
+            List<String> competencies,
+            List<String> recommendations,
+            String summaryMessage
     ) {
     }
 
@@ -228,6 +280,14 @@ public final class SimulationDtos {
             String status,
             int accumulatedScore,
             int stressIndex,
+            SimulationMetrics metrics,
+            String startedAt,
+            String endedAt,
+            int adequateDecisions,
+            int riskyDecisions,
+            int inadequateDecisions,
+            int prohibitedDecisions,
+            boolean safeExitUsed,
             List<TraceEvent> events,
             WorldState world,
             List<ReflectionTrace> reflections,
@@ -237,6 +297,7 @@ public final class SimulationDtos {
 
     public record TraceEvent(
             String type,
+            String classification,
             String nodeTitle,
             String decisionText,
             int scoreDelta,

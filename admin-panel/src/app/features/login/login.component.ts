@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { APP_BRAND } from '../../core/config/brand.config';
 
 @Component({
   selector: 'app-login',
@@ -28,20 +29,21 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="visual-copy">
           <a routerLink="/" class="back-link">
             <mat-icon>arrow_back</mat-icon>
-            Psicología Humboldt
+            {{ brand.institution }}
           </a>
           <img class="visual-logo" src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="160" height="80">
-          <h1>Portal académico PsychoSim</h1>
-          <p>
-            Acceso seguro para simulación, seguimiento docente, analíticas formativas y gestión ética de casos
-            del Programa de Psicología.
-          </p>
+          <p class="brand-kicker">{{ brand.fullName }}</p>
+          <h1>{{ brand.shortName }}</h1>
+          <p class="brand-subtitle">{{ brand.subtitle }}</p>
+          <p class="brand-description">{{ brand.description }}</p>
         </div>
       </section>
 
       <section class="login-form-zone">
         <article class="psy-auth-card liquid-glass">
           <div class="form-heading">
+            <p class="mobile-brand">{{ brand.shortName }}</p>
+            <p class="mobile-brand-sub">{{ brand.fullName }}</p>
             <span class="psy-chip">Acceso institucional</span>
             <h2>Ingresa con tus credenciales</h2>
             <p>Tu sesión protege información académica y contenidos sensibles.</p>
@@ -87,7 +89,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
             <button class="psy-button psy-button--primary submit-btn" type="submit" [disabled]="form.invalid || loading()">
               <mat-icon>login</mat-icon>
-              Ingresar al portal
+              Ingresar al sistema
             </button>
           </form>
 
@@ -110,9 +112,7 @@ import { AuthService } from '../../core/auth/auth.service';
       min-height: 100vh;
       display: grid;
       grid-template-columns: minmax(420px, .92fr) minmax(430px, 1fr);
-      background:
-        radial-gradient(circle at 72% 18%, rgba(169,155,214,.2), transparent 30%),
-        linear-gradient(135deg, #F7FAFC, #EAF1F4);
+      background: var(--siep-bg);
     }
     .login-visual {
       position: relative;
@@ -122,7 +122,7 @@ import { AuthService } from '../../core/auth/auth.service';
       padding: clamp(28px, 5vw, 58px);
       overflow: hidden;
       background:
-        linear-gradient(180deg, rgba(36,50,58,.08), rgba(36,50,58,.68)),
+        linear-gradient(180deg, rgba(0, 59, 99, .72), rgba(0, 72, 118, .92)),
         url('/assets/images/institution/psychology-program-hero.png') center/cover no-repeat;
     }
     .login-visual::after {
@@ -130,8 +130,8 @@ import { AuthService } from '../../core/auth/auth.service';
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 30% 22%, rgba(79,163,165,.32), transparent 34%),
-        radial-gradient(circle at 78% 74%, rgba(169,155,214,.28), transparent 30%);
+        radial-gradient(circle at 30% 22%, rgba(11, 90, 138, .28), transparent 34%),
+        radial-gradient(circle at 78% 74%, rgba(0, 72, 118, .22), transparent 30%);
       pointer-events: none;
     }
     .visual-copy {
@@ -164,11 +164,36 @@ import { AuthService } from '../../core/auth/auth.service';
       font-weight: 700;
     }
     .visual-copy h1 {
-      margin: 28px 0 12px;
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(2.5rem, 5vw, 5rem);
-      line-height: .96;
+      margin: 16px 0 12px;
+      font-family: 'Poppins', system-ui, sans-serif;
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1;
       letter-spacing: 0;
+      color: #fff;
+    }
+    .brand-kicker {
+      margin: 28px 0 0;
+      color: rgba(255,255,255,.88);
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .brand-subtitle {
+      max-width: 560px;
+      margin: 0 0 14px;
+      color: rgba(255,255,255,.92);
+      font-size: 1.12rem;
+      font-weight: 600;
+      line-height: 1.55;
+    }
+    .brand-description {
+      max-width: 560px;
+      margin: 0;
+      color: rgba(255,255,255,.78);
+      font-size: .98rem;
+      line-height: 1.65;
     }
     .visual-copy p {
       max-width: 560px;
@@ -188,12 +213,19 @@ import { AuthService } from '../../core/auth/auth.service';
     .form-heading {
       margin-bottom: 26px;
     }
+    .mobile-brand,
+    .mobile-brand-sub {
+      display: none;
+      margin: 0;
+    }
     .form-heading h2 {
       margin: 18px 0 8px;
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 1;
+      font-family: 'Poppins', system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.1;
       letter-spacing: 0;
+      color: var(--siep-blue);
     }
     .form-heading p {
       margin: 0;
@@ -258,6 +290,20 @@ import { AuthService } from '../../core/auth/auth.service';
       .login-visual {
         display: none;
       }
+      .mobile-brand {
+        display: block;
+        color: var(--siep-blue);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+      .mobile-brand-sub {
+        display: block;
+        margin: 4px 0 14px;
+        color: var(--siep-muted);
+        font-size: .92rem;
+        font-weight: 600;
+      }
       .login-form-zone {
         min-height: 100vh;
       }
@@ -278,6 +324,7 @@ import { AuthService } from '../../core/auth/auth.service';
   `]
 })
 export class LoginComponent {
+  readonly brand = APP_BRAND;
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);

@@ -130,8 +130,8 @@ type EditorPanel =
                       <p>{{ obj.interactionPrompt }}</p>
                       <p class="editor-card-meta">
                         {{ obj.x }}, {{ obj.y }} · {{ obj.shortCode }}
-                        @if (obj.toolCode) { · 🔧 {{ obj.toolCode }} }
-                        @if (obj.decisionOptionId) { · 🎯 decisión #{{ obj.decisionOptionId }} }
+                        @if (obj.toolCode) { · herramienta {{ obj.toolCode }} }
+                        @if (obj.decisionOptionId) { · decisión #{{ obj.decisionOptionId }} }
                       </p>
                     </article>
                   }
@@ -196,7 +196,7 @@ type EditorPanel =
                     {{ model.checklistCompletion }}%
                   </div>
                   <div class="checklist-form">
-                    <h3>{{ model.publishable ? '✅ Listo para publicación' : '⏳ Pendiente de validación' }}</h3>
+                    <h3>{{ model.publishable ? 'Listo para publicación' : 'Pendiente de validación' }}</h3>
                     <p>La publicación queda bloqueada hasta que el checklist ético y académico alcance el 100%.</p>
                     @if (checklistForm) {
                       <form [formGroup]="checklistForm" (ngSubmit)="saveChecklist(model.caseVersionId)" class="check-items">
@@ -536,7 +536,8 @@ type EditorPanel =
     }
     .editor-hero h2 {
       margin: 6px 0 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       font-size: clamp(1.6rem, 3.5vw, 2.6rem);
     }
     .editor-meta { margin: 8px 0 0; color: var(--psy-muted); }
@@ -574,7 +575,8 @@ type EditorPanel =
     .card-actions { display: flex; gap: 4px; }
     .editor-card h3 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       font-size: 1.1rem;
     }
     .editor-card p {
@@ -607,7 +609,7 @@ type EditorPanel =
       box-shadow: inset 0 0 0 12px rgba(255,255,255,.7);
       flex-shrink: 0;
     }
-    .checklist-form h3 { margin: 0 0 8px; font-family: 'Cormorant Garamond', serif; }
+    .checklist-form h3 { margin: 0 0 8px; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
     .checklist-form p { margin: 0 0 16px; color: var(--psy-muted); }
     .check-items { display: grid; gap: 10px; }
     .check-item {
@@ -622,7 +624,7 @@ type EditorPanel =
 
     /* Rubrics */
     .rubric-section { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--psy-border); }
-    .rubric-section h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    .rubric-section h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
 
     /* Preview */
     .preview-panel {
@@ -633,7 +635,7 @@ type EditorPanel =
       text-align: center;
     }
     .preview-panel mat-icon { font-size: 52px; width: 52px; height: 52px; color: var(--psy-blue-deep); }
-    .preview-panel h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    .preview-panel h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
 
     /* Side panel */
     .side-panel {
@@ -653,7 +655,8 @@ type EditorPanel =
     }
     .side-panel-head h3 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       font-size: 1.2rem;
     }
 
@@ -714,7 +717,7 @@ type EditorPanel =
       text-align: center;
     }
     .world-node-picker mat-icon { font-size: 48px; width: 48px; height: 48px; color: var(--psy-blue-deep); }
-    .world-node-picker h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    .world-node-picker h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
     .world-node-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

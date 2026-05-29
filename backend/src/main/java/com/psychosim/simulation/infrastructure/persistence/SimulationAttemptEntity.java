@@ -53,6 +53,18 @@ public class SimulationAttemptEntity {
     @Column(name = "stress_index", nullable = false)
     private int stressIndex;
 
+    @Column(name = "victim_risk", nullable = false)
+    private int victimRisk = 50;
+
+    @Column(name = "user_trust", nullable = false)
+    private int userTrust = 50;
+
+    @Column(name = "institutional_route_activated", nullable = false)
+    private boolean institutionalRouteActivated;
+
+    @Column(name = "revictimization_risk", nullable = false)
+    private boolean revictimizationRisk;
+
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt = LocalDateTime.now();
 

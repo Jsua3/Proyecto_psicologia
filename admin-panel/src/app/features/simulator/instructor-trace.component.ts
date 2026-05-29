@@ -15,12 +15,15 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
       <header class="trace-hero liquid-glass psy-game-panel">
         <div>
           <p class="psy-eyebrow">Panel docente</p>
-          <h2>Trazabilidad y rubrica evaluativa</h2>
-          <p>Revisa rutas, interacciones, herramientas, decisiones, bitacoras y competencias.</p>
+          <h2>Trazabilidad y rúbrica evaluativa</h2>
+          <p>Revisa rutas, interacciones, herramientas de apoyo, decisiones, bitácoras y competencias.</p>
         </div>
       </header>
       @if (loading()) {
         <mat-progress-bar mode="indeterminate" />
+      }
+      @if (error()) {
+        <div class="state-card error-state" role="alert">{{ error() }}</div>
       }
       <div class="trace-layout">
         <aside class="attempt-list liquid-glass psy-game-panel">
@@ -39,16 +42,21 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
               <div>
                 <p class="psy-eyebrow">{{ item.studentAlias }}</p>
                 <h3>{{ item.caseTitle }}</h3>
-                <p>{{ item.status }} · Puntaje {{ item.accumulatedScore }} · Estres {{ item.stressIndex }}%</p>
+                <p>{{ item.status }} · Puntaje {{ item.accumulatedScore }} · Estrés {{ item.stressIndex }}%</p>
+                <p>Inicio: {{ item.startedAt }} @if (item.endedAt) { · Fin: {{ item.endedAt }} }</p>
+                <p>Confianza {{ item.metrics.userTrust }}% · Riesgo {{ item.metrics.victimRisk }}%
+                  @if (item.safeExitUsed) { · Salida segura utilizada }</p>
+                <p>Adecuadas {{ item.adequateDecisions }} · Riesgosas {{ item.riskyDecisions }}
+                  · Inadecuadas {{ item.inadequateDecisions }} · Alertas {{ item.prohibitedDecisions }}</p>
               </div>
             </section>
             <section class="timeline liquid-glass psy-game-panel">
-              <h3>Linea de tiempo</h3>
-              @for (event of item.events; track event.occurredAt) {
+              <h3>Línea de tiempo</h3>
+              @for (event of item.events; track $index) {
                 <article class="event-row">
                   <mat-icon>{{ iconFor(event.type) }}</mat-icon>
                   <div>
-                    <strong>{{ event.type }}</strong>
+                    <strong>{{ event.type }} @if (event.classification) { · {{ event.classification }} }</strong>
                     <p>{{ event.detail || event.decisionText || event.nodeTitle }}</p>
                     <small>{{ event.occurredAt }}</small>
                   </div>
@@ -56,7 +64,7 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
               }
             </section>
             <section class="timeline liquid-glass psy-game-panel">
-              <h3>Bitacoras</h3>
+              <h3>Bitácoras reflexivas</h3>
               @for (reflection of item.reflections; track reflection.nodeId) {
                 <article class="reflection-row">
                   <strong>{{ reflection.nodeTitle }}</strong>
@@ -77,17 +85,20 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
                   </article>
                 }
                 <textarea [(ngModel)]="rubricComment" rows="4" placeholder="Comentario docente"></textarea>
-                <button class="psy-button psy-button--primary" type="button" (click)="saveRubric()">
+                <button class="psy-button psy-button--primary" type="button" (click)="saveRubric()" [disabled]="savingRubric()">
                   <mat-icon>save</mat-icon>
-                  Guardar rubrica
+                  {{ savingRubric() ? 'Guardando…' : 'Guardar rúbrica' }}
                 </button>
+                @if (rubricMessage()) {
+                  <p class="rubric-message" role="status">{{ rubricMessage() }}</p>
+                }
               </section>
             }
           } @else {
             <section class="empty-state liquid-glass psy-game-panel">
               <mat-icon>timeline</mat-icon>
               <h3>Selecciona un intento</h3>
-              <p>El panel mostrara recorrido, decisiones, herramientas y rubrica.</p>
+              <p>El panel mostrará recorrido, decisiones, herramientas de apoyo y rúbrica.</p>
             </section>
           }
         </main>
@@ -102,7 +113,8 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
     }
     .trace-hero h2 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       font-size: clamp(2rem, 4vw, 3rem);
     }
     .trace-hero p:not(.psy-eyebrow), .trace-summary p, .event-row p, .reflection-row p, .rubric-row p, .empty-state p {
@@ -112,7 +124,7 @@ import { AttemptTrace, RecentAttempt, RubricEvaluationView } from '../../core/mo
     }
     .trace-layout { display: grid; grid-template-columns: minmax(260px, .36fr) minmax(0, 1fr); gap: 18px; align-items: start; }
     .attempt-list { display: grid; gap: 10px; }
-    .attempt-list h3, .timeline h3, .trace-summary h3, .empty-state h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    .attempt-list h3, .timeline h3, .trace-summary h3, .empty-state h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
     .attempt-card {
       display: grid;
       gap: 4px;
@@ -165,6 +177,9 @@ export class InstructorTraceComponent implements OnInit {
   readonly trace = signal<AttemptTrace | null>(null);
   readonly rubric = signal<RubricEvaluationView | null>(null);
   readonly loading = signal(true);
+  readonly error = signal('');
+  readonly rubricMessage = signal('');
+  readonly savingRubric = signal(false);
   rubricScores: Record<number, number> = {};
   rubricComment = '';
 
@@ -174,19 +189,38 @@ export class InstructorTraceComponent implements OnInit {
         this.attempts.set(attempts);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: () => {
+        this.error.set('No pudimos cargar los intentos recientes.');
+        this.loading.set(false);
+      }
     });
   }
 
   open(attempt: RecentAttempt) {
     this.loading.set(true);
-    this.simulationService.attemptTrace(attempt.attemptId).subscribe(trace => {
-      this.trace.set(trace);
-      this.simulationService.rubric(attempt.attemptId).subscribe(rubric => {
-        this.rubric.set(rubric);
-        this.rubricScores = Object.fromEntries(rubric.criteria.map(item => [item.id, 0]));
+    this.error.set('');
+    this.simulationService.attemptTrace(attempt.attemptId).subscribe({
+      next: trace => {
+        this.trace.set(trace);
+        this.simulationService.rubric(attempt.attemptId).subscribe({
+          next: rubric => {
+            this.rubric.set(rubric);
+            this.rubricScores = Object.fromEntries(
+              rubric.criteria.map(item => [item.id, rubric.scores.find(s => s.criterionId === item.id)?.score ?? 0])
+            );
+            this.rubricComment = rubric.comment ?? '';
+            this.loading.set(false);
+          },
+          error: () => {
+            this.error.set('No pudimos cargar la rúbrica del intento.');
+            this.loading.set(false);
+          }
+        });
+      },
+      error: () => {
+        this.error.set('No pudimos cargar la trazabilidad del intento.');
         this.loading.set(false);
-      });
+      }
     });
   }
 
@@ -199,7 +233,18 @@ export class InstructorTraceComponent implements OnInit {
       score: Number(this.rubricScores[criterion.id] ?? 0),
       comment: ''
     }));
-    this.simulationService.saveRubric(trace.attemptId, rubric.rubricId, this.rubricComment, scores).subscribe(saved => this.rubric.set(saved));
+    this.savingRubric.set(true);
+    this.simulationService.saveRubric(trace.attemptId, rubric.rubricId, this.rubricComment, scores).subscribe({
+      next: saved => {
+        this.rubric.set(saved);
+        this.rubricMessage.set('Rúbrica guardada correctamente.');
+        this.savingRubric.set(false);
+      },
+      error: () => {
+        this.rubricMessage.set('No pudimos guardar la rúbrica.');
+        this.savingRubric.set(false);
+      }
+    });
   }
 
   iconFor(type: string) {

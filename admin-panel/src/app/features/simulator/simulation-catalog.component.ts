@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SimulationService } from '../../core/api/simulation.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { SimulationCaseSummary } from '../../core/models/simulation.model';
 
 @Component({
@@ -14,11 +15,11 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
     <section class="sim-catalog">
       <header class="catalog-hero liquid-glass">
         <div>
-          <p class="psy-eyebrow">Simulador gamificado</p>
-          <h2>Casos publicados para práctica deliberada.</h2>
+          <p class="psy-eyebrow">Entrenamiento psicosocial</p>
+          <h2>Casos publicados para simulación formativa.</h2>
           <p>
-            Inicia un intento, toma decisiones clínicas y procedimentales, registra tu bitácora y recibe
-            retroalimentación inmediata sobre impacto, riesgo y ruta ética.
+            Inicia un intento, toma decisiones en casos simulados, registra tu bitácora reflexiva y recibe
+            retroalimentación formativa sobre impacto, riesgo y rutas de atención.
           </p>
         </div>
         <div class="hero-mark" aria-hidden="true">
@@ -50,14 +51,18 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
               <span><mat-icon>route</mat-icon>{{ item.nodeCount }} escenas</span>
               <span><mat-icon>verified</mat-icon>{{ item.status }}</span>
             </div>
-            <button class="psy-button psy-button--primary" type="button" (click)="start(item)">
-              <mat-icon>play_arrow</mat-icon>
-              Iniciar simulación
-            </button>
-            <button class="psy-button psy-button--glass" type="button" (click)="openEditor(item)">
-              <mat-icon>edit_note</mat-icon>
-              Editor visual
-            </button>
+            @if (canPlay()) {
+              <button class="psy-button psy-button--primary" type="button" (click)="start(item)">
+                <mat-icon>play_arrow</mat-icon>
+                Iniciar simulación
+              </button>
+            }
+            @if (canEdit()) {
+              <button class="psy-button psy-button--glass" type="button" (click)="openEditor(item)">
+                <mat-icon>edit_note</mat-icon>
+                Editor visual
+              </button>
+            }
           </article>
         }
       </div>
@@ -86,7 +91,7 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
     .catalog-hero h2 {
       max-width: 820px;
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
       font-size: clamp(2rem, 4vw, 3.2rem);
       line-height: 1.02;
       letter-spacing: 0;
@@ -133,9 +138,10 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
     }
     .case-card h3 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
       font-size: 1.85rem;
       line-height: 1.05;
+      letter-spacing: 0;
     }
     .case-card p {
       margin: 0;
@@ -188,10 +194,19 @@ import { SimulationCaseSummary } from '../../core/models/simulation.model';
 export class SimulationCatalogComponent implements OnInit {
   private readonly simulationService = inject(SimulationService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   readonly cases = signal<SimulationCaseSummary[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
+
+  canPlay() {
+    return this.auth.hasRole('ESTUDIANTE', 'ADMIN');
+  }
+
+  canEdit() {
+    return this.auth.hasRole('ADMIN');
+  }
 
   ngOnInit() {
     this.simulationService.listCases().subscribe({

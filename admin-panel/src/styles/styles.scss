@@ -9,8 +9,8 @@ $psychology-theme: mat.define-theme((
     tertiary: mat.$cyan-palette
   ),
   typography: (
-    brand-family: 'Outfit, sans-serif',
-    plain-family: 'Outfit, sans-serif'
+    brand-family: 'Poppins, sans-serif',
+    plain-family: 'Poppins, sans-serif'
   ),
   density: (scale: 0)
 ));
@@ -20,24 +20,36 @@ html {
 }
 
 :root {
-  --psy-bg: #F4F7FA;
-  --psy-surface: #FFFFFF;
-  --psy-surface-soft: #EAF1F4;
-  --psy-ink: #24323A;
-  --psy-muted: #566975;  /* AA-compliant: 5.02:1 on white (was #687A86 = 4.03:1) */
-  --psy-blue: #4F7CAC;
-  --psy-blue-deep: #2F5F8F;
-  --psy-teal: #4FA3A5;
-  --psy-teal-deep: #2F7476;
-  --psy-green: #8CBFA6;
-  --psy-green-deep: #5D9278;
-  --psy-lavender: #A99BD6;
-  --psy-lavender-soft: #E7E2F5;
-  --psy-border: rgba(47, 95, 143, 0.16);
-  --psy-focus: rgba(79, 124, 172, 0.32);
-  --psy-radius-sm: 8px;
-  --psy-radius: 14px;
-  --psy-radius-lg: 18px;
+  --siep-blue: #004876;
+  --siep-blue-dark: #003B63;
+  --siep-blue-soft: #0B5A8A;
+  --siep-bg: #F2F2F2;
+  --siep-surface: #FFFFFF;
+  --siep-text: #101820;
+  --siep-muted: #5F6B76;
+  --siep-border: #DDE5EC;
+  --siep-radius-lg: 36px;
+  --siep-radius-md: 24px;
+  --siep-shadow-soft: 0 18px 35px rgba(0, 72, 118, 0.16);
+
+  --psy-bg: var(--siep-bg);
+  --psy-surface: var(--siep-surface);
+  --psy-surface-soft: #E8EEF3;
+  --psy-ink: var(--siep-text);
+  --psy-muted: var(--siep-muted);
+  --psy-blue: var(--siep-blue-soft);
+  --psy-blue-deep: var(--siep-blue);
+  --psy-teal: var(--siep-blue-soft);
+  --psy-teal-deep: var(--siep-blue-dark);
+  --psy-green: #5D9278;
+  --psy-green-deep: #4A7560;
+  --psy-lavender: #7A9EC0;
+  --psy-lavender-soft: #E8EEF3;
+  --psy-border: var(--siep-border);
+  --psy-focus: rgba(0, 72, 118, 0.32);
+  --psy-radius-sm: 12px;
+  --psy-radius: 20px;
+  --psy-radius-lg: var(--siep-radius-md);
   --psy-pill: 999px;
   --psy-space-1: 4px;
   --psy-space-2: 8px;
@@ -64,21 +76,25 @@ html {
 html {
   scroll-behavior: smooth;
   background: var(--psy-bg);
+  font-family: 'Poppins', 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 body {
   min-height: 100%;
   margin: 0;
-  font-family: 'Outfit', 'Source Sans 3', system-ui, sans-serif;
+  font-family: 'Poppins', 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--psy-ink);
-  background:
-    radial-gradient(circle at 12% 8%, rgba(79, 163, 165, .16), transparent 32%),
-    radial-gradient(circle at 86% 0%, rgba(169, 155, 214, .18), transparent 34%),
-    linear-gradient(180deg, #F8FBFD 0%, var(--psy-bg) 54%, #EDF4F6 100%);
+  background: linear-gradient(180deg, #FAFAFA 0%, var(--psy-bg) 54%, #ECECEC 100%);
   text-rendering: optimizeLegibility;
 }
 
-body, button, input, textarea, select {
+h1, h2, h3 {
+  color: var(--siep-blue);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+button, input, textarea, select {
   font: inherit;
 }
 
@@ -228,7 +244,7 @@ code, .psy-mono {
 
 .psy-eyebrow {
   margin: 0 0 10px;
-  color: var(--psy-teal-deep);
+  color: var(--siep-blue-soft);
   font-size: .76rem;
   font-weight: 700;
   letter-spacing: .12em;
@@ -237,10 +253,11 @@ code, .psy-mono {
 
 .psy-title {
   margin: 0;
-  color: var(--psy-ink);
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  color: var(--siep-blue);
+  font-family: 'Poppins', 'Montserrat', system-ui, sans-serif;
+  font-weight: 800;
   font-size: clamp(2.1rem, 5vw, 4.75rem);
-  line-height: .96;
+  line-height: 1.02;
   letter-spacing: 0;
 }
 
@@ -265,14 +282,21 @@ code, .psy-mono {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.psy-card {
+.psy-card,
+.siep-card {
   position: relative;
   overflow: hidden;
-  padding: 24px;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
   border: 1px solid var(--psy-border);
-  border-radius: var(--psy-radius);
-  background: rgba(255,255,255,.82);
+  border-radius: var(--siep-radius-md);
+  background: var(--siep-surface);
   box-shadow: var(--psy-shadow-card);
+}
+
+.siep-card {
+  background: var(--siep-bg);
+  border-radius: var(--siep-radius-lg);
+  padding: clamp(1.5rem, 4vw, 3.5rem);
 }
 
 .psy-card::after {
@@ -286,10 +310,12 @@ code, .psy-mono {
   pointer-events: none;
 }
 
-.psy-card h3 {
+.psy-card h3,
+.siep-card h3 {
   margin: 12px 0 8px;
-  font-size: 1.08rem;
-  color: var(--psy-ink);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+  color: var(--siep-blue);
+  font-weight: 700;
 }
 
 .psy-card p {
@@ -345,16 +371,30 @@ code, .psy-mono {
   transform: scale(.97);
 }
 
-.psy-button--primary {
-  background: linear-gradient(135deg, var(--psy-blue-deep), var(--psy-teal-deep));
-  color: white;
-  box-shadow: 0 16px 34px -22px rgba(47, 95, 143, .85);
+.psy-button--primary,
+.siep-btn-primary {
+  background: var(--siep-blue);
+  color: #fff;
+  border-radius: 18px;
+  padding: 0.9rem 1.5rem;
+  font-weight: 700;
+  box-shadow: var(--siep-shadow-soft);
 }
 
-.psy-button--ghost {
-  background: rgba(255,255,255,.74);
-  color: var(--psy-blue-deep);
-  border: 1px solid var(--psy-border);
+@media (hover: hover) and (pointer: fine) {
+  .psy-button--primary:hover,
+  .siep-btn-primary:hover {
+    background: var(--siep-blue-dark);
+  }
+}
+
+.psy-button--ghost,
+.siep-btn-secondary {
+  background: var(--siep-surface);
+  color: var(--siep-blue);
+  border: 2px solid var(--siep-blue);
+  border-radius: 18px;
+  font-weight: 700;
 }
 
 .psy-button--glass {

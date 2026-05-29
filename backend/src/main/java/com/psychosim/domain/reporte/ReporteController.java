@@ -26,15 +26,17 @@ public class ReporteController {
     @GetMapping("/grupo/{grupoId}")
     public ResponseEntity<ApiResponse<ReporteService.ReporteGrupoDTO>> reporGrupo(
             @PathVariable Long grupoId,
-            @RequestParam Long casoId) {
-        return ResponseEntity.ok(ApiResponse.ok(reporteService.generarReporteGrupo(grupoId, casoId)));
+            @RequestParam(required = false) Long casoId,
+            @RequestParam(required = false) Long caseVersionId) {
+        return ResponseEntity.ok(ApiResponse.ok(reporteService.generarReporteGrupo(grupoId, casoId, caseVersionId)));
     }
 
     @GetMapping("/grupo/{grupoId}/export")
     public ResponseEntity<byte[]> exportarCsv(
             @PathVariable Long grupoId,
-            @RequestParam Long casoId) {
-        String csv = reporteService.exportarCsv(grupoId, casoId);
+            @RequestParam(required = false) Long casoId,
+            @RequestParam(required = false) Long caseVersionId) {
+        String csv = reporteService.exportarCsv(grupoId, casoId, caseVersionId);
         byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,

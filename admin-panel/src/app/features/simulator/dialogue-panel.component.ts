@@ -22,11 +22,10 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
         [attr.aria-label]="d.speakerName + ': ' + fullText()"
         aria-live="polite">
 
-        <!-- Portrait -->
         <div class="portrait" aria-hidden="true">
-          <span class="portrait-emoji">{{ d.portraitKey ?? '🧑‍⚕️' }}</span>
+          <mat-icon>{{ portraitIcon(d.portraitKey) }}</mat-icon>
           @if (d.emotion && d.emotion !== 'neutral') {
-            <span class="emotion-chip">{{ emotionEmoji(d.emotion) }}</span>
+            <span class="emotion-chip" [attr.data-emotion]="d.emotion"></span>
           }
         </div>
 
@@ -35,7 +34,7 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
           <p class="speaker-name">{{ d.speakerName }}</p>
           <p class="dialogue-text" aria-live="polite">{{ displayedText() }}<span class="cursor" [class.cursor--done]="isTypingComplete()" aria-hidden="true">▋</span></p>
 
-          @if (isTypingComplete() && d.choices?.length) {
+          @if (isTypingComplete() && d.choices.length) {
             <div class="choices" role="group" aria-label="Opciones de intervención">
               @for (choice of d.choices; track choice.key) {
                 <button
@@ -52,9 +51,9 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
             </div>
           }
 
-          @if (isTypingComplete() && !d.choices?.length) {
+          @if (isTypingComplete() && !d.choices.length) {
             <button type="button" class="close-btn psy-button psy-button--ghost" (click)="close.emit()" aria-label="Cerrar diálogo (Esc)">
-              Continuar <span aria-hidden="true">▶</span>
+              Continuar
             </button>
           }
         </div>
@@ -92,15 +91,21 @@ const TYPEWRITER_INTERVAL_MS = Math.round(1000 / CHARS_PER_SEC); // ~45ms
       border-right: 1px solid rgba(79,163,165,.2);
       background: rgba(79,163,165,.06);
     }
-    .portrait-emoji { font-size: 2.2rem; line-height: 1; }
+    .portrait mat-icon {
+      color: var(--siep-blue-soft);
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
     .emotion-chip {
       position: absolute;
-      bottom: 6px;
-      right: 6px;
-      font-size: .9rem;
-      background: rgba(8,12,18,.7);
+      bottom: 12px;
+      right: 12px;
+      width: 10px;
+      height: 10px;
+      background: var(--siep-blue-soft);
+      border: 2px solid rgba(8,12,18,.92);
       border-radius: 50%;
-      padding: 2px 3px;
     }
 
     .strip-body {
@@ -257,12 +262,9 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
     return this.dialogue()?.lines?.map(l => l.text).join(' ') ?? '';
   }
 
-  emotionEmoji(emotion: string): string {
-    const map: Record<string, string> = {
-      positive: '😊', negative: '😔', anxious: '😰',
-      angry: '😠', danger: '⚠️', neutral: ''
-    };
-    return map[emotion] ?? '';
+  portraitIcon(icon: string | null): string {
+    if (icon && /^[a-z0-9_]+$/.test(icon)) return icon;
+    return 'person';
   }
 
   private startTypewriter(text: string) {

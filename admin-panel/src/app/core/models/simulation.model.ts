@@ -8,6 +8,19 @@ export interface SimulationCaseSummary {
   status: string;
 }
 
+export interface ProgressMapNode {
+  key: string;
+  label: string;
+  start: boolean;
+  terminal: boolean;
+}
+
+export interface ProgressMapState {
+  nodes: ProgressMapNode[];
+  visitedNodeKeys: string[];
+  currentNodeKey: string;
+}
+
 export interface SimulationAttemptState {
   attemptId: string;
   attemptToken: string;
@@ -16,9 +29,40 @@ export interface SimulationAttemptState {
   status: 'IN_PROGRESS' | 'SAFE_EXITED' | 'COMPLETED';
   accumulatedScore: number;
   stressIndex: number;
+  metrics: SimulationMetrics;
   currentNode: SimulationNodeState;
   feedback: SimulationFeedback | null;
+  completionReport: AttemptCompletionReport | null;
   supportResources: string[];
+}
+
+export interface SimulationMetrics {
+  professionalScore: number;
+  sceneStress: number;
+  victimRisk: number;
+  userTrust: number;
+  institutionalRouteActivated: boolean;
+  revictimizationRisk: boolean;
+}
+
+export interface AttemptCompletionReport {
+  attemptId: string;
+  caseTitle: string;
+  status: SimulationAttemptState['status'];
+  finalScore: number;
+  finalStress: number;
+  metrics: SimulationMetrics;
+  adequateDecisions: number;
+  riskyDecisions: number;
+  inadequateDecisions: number;
+  prohibitedDecisions: number;
+  toolsUsed: number;
+  reflectionsCount: number;
+  safeExitUsed: boolean;
+  visitedNodeTitles: string[];
+  competencies: string[];
+  recommendations: string[];
+  summaryMessage: string;
 }
 
 export interface SimulationNodeState {
@@ -46,7 +90,11 @@ export interface SimulationFeedback {
   classification: 'ADEQUATE' | 'RISKY' | 'INADEQUATE';
   scoreDelta: number;
   stressDelta: number;
+  trustDelta: number;
+  victimRiskDelta: number;
   prohibitedConduct: boolean;
+  institutionalRouteActivated: boolean;
+  revictimizationRisk: boolean;
   message: string;
   prohibitionReason: string | null;
 }
@@ -169,16 +217,6 @@ export interface ToolUseResult {
   feedbackMessage: string;
 }
 
-export interface TraceEvent {
-  type: string;
-  nodeTitle: string | null;
-  decisionText: string | null;
-  scoreDelta: number;
-  stressDelta: number;
-  detail: string | null;
-  occurredAt: string;
-}
-
 export interface AttemptTrace {
   attemptId: string;
   studentAlias: string;
@@ -186,10 +224,29 @@ export interface AttemptTrace {
   status: string;
   accumulatedScore: number;
   stressIndex: number;
+  metrics: SimulationMetrics;
+  startedAt: string;
+  endedAt: string | null;
+  adequateDecisions: number;
+  riskyDecisions: number;
+  inadequateDecisions: number;
+  prohibitedDecisions: number;
+  safeExitUsed: boolean;
   events: TraceEvent[];
   world: SimulationWorldState;
   reflections: ReflectionTrace[];
   rubricEvaluations: RubricSummary[];
+}
+
+export interface TraceEvent {
+  type: string;
+  classification: string | null;
+  nodeTitle: string | null;
+  decisionText: string | null;
+  scoreDelta: number;
+  stressDelta: number;
+  detail: string | null;
+  occurredAt: string;
 }
 
 export interface ReflectionTrace {

@@ -21,12 +21,16 @@ import com.psychosim.simulation.infrastructure.persistence.SimulationAttemptEnti
 import com.psychosim.simulation.infrastructure.persistence.SimulationAttemptJpaRepository;
 import com.psychosim.simulation.infrastructure.persistence.SimulationNodeEntity;
 import com.psychosim.simulation.infrastructure.persistence.SimulationNodeJpaRepository;
+import com.psychosim.simulation.web.SimulationDtos.AttemptCompletionReport;
 import com.psychosim.simulation.web.SimulationDtos.AttemptState;
 import com.psychosim.simulation.web.SimulationDtos.CaseSummary;
 import com.psychosim.simulation.web.SimulationDtos.DecisionOptionState;
 import com.psychosim.simulation.web.SimulationDtos.Feedback;
 import com.psychosim.simulation.web.SimulationDtos.NodeState;
+import com.psychosim.simulation.web.SimulationDtos.ProgressMapNode;
+import com.psychosim.simulation.web.SimulationDtos.ProgressMapState;
 import com.psychosim.simulation.web.SimulationDtos.ReflectionSaved;
+import com.psychosim.simulation.web.SimulationDtos.SimulationMetrics;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -37,8 +41,14 @@ import java.nio.charset.StandardCharsets;
 import com.psychosim.simulation.infrastructure.audit.Auditable;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -58,7 +68,8 @@ public class SimulationGameService {
     private final ReflectionJournalJpaRepository reflectionRepository;
     private final UserRepository userRepository;
     private final ReflectionCryptoService reflectionCryptoService;
-    private final SimulationWorldService simulationWorldService;
+    private final DecisionEffectCalculator decisionEffectCalculator;
+    private final AttemptCompletionReportBuilder completionReportBuilder;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -80,10 +91,22 @@ public class SimulationGameService {
 
     @Auditable(action = "ATTEMPT_STARTED", resourceType = "CASE_VERSION")
     @Transactional
-    public AttemptState startAttempt(Long caseVersionId, User actor) {
+    public AttemptState startAttempt(Long caseVersionId, User actor, boolean forceNew) {
         CaseVersionEntity version = requirePublishedCaseVersion(caseVersionId);
         User student = userRepository.findById(actor.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        if (!forceNew) {
+            Optional<SimulationAttemptEntity> active = attemptRepository
+                    .findFirstByStudent_IdAndCaseVersion_IdAndStatusOrderByStartedAtDesc(
+                            student.getId(), caseVersionId, AttemptStatus.IN_PROGRESS);
+            if (active.isPresent()) {
+                return toAttemptState(active.get(), reissueToken(active.get()), null);
+            }
+        } else {
+            closeActiveAttempts(student.getId(), caseVersionId, "Reemplazado por nuevo intento");
+        }
+
         SimulationNodeEntity startNode = nodeRepository.findByCaseVersionIdAndStartNodeTrue(version.getId())
                 .orElseThrow(() -> new EntityNotFoundException("El caso no tiene nodo inicial"));
 
@@ -95,6 +118,12 @@ public class SimulationGameService {
         attempt.setStudent(student);
         attempt.setCurrentNode(startNode);
         attempt.setStatus(AttemptStatus.IN_PROGRESS);
+        attempt.setAccumulatedScore(0);
+        attempt.setStressIndex(0);
+        attempt.setVictimRisk(50);
+        attempt.setUserTrust(50);
+        attempt.setInstitutionalRouteActivated(false);
+        attempt.setRevictimizationRisk(false);
         attempt.setStartedAt(LocalDateTime.now());
         attemptRepository.save(attempt);
 
@@ -104,10 +133,51 @@ public class SimulationGameService {
         return toAttemptState(attempt, token.value(), null);
     }
 
+    @Transactional
+    public Optional<AttemptState> findActiveAttempt(Long caseVersionId, User actor) {
+        requirePublishedCaseVersion(caseVersionId);
+        return attemptRepository
+                .findFirstByStudent_IdAndCaseVersion_IdAndStatusOrderByStartedAtDesc(
+                        actor.getId(), caseVersionId, AttemptStatus.IN_PROGRESS)
+                .map(attempt -> toAttemptState(attempt, reissueToken(attempt), null));
+    }
+
+    @Transactional(readOnly = true)
+    public ProgressMapState getProgressMap(UUID attemptId, String attemptToken, User actor) {
+        SimulationAttemptEntity attempt = requireAttempt(attemptId, attemptToken, actor);
+        Long caseVersionId = attempt.getCaseVersion().getId();
+        List<SimulationNodeEntity> orderedNodes = orderNodesForProgressMap(caseVersionId);
+        List<String> visitedNodeKeys = eventRepository.findByAttemptIdOrderByOccurredAt(attemptId).stream()
+                .filter(event -> event.getEventType() == AttemptEventType.NODE_ENTERED)
+                .map(event -> event.getNode().getNodeKey())
+                .distinct()
+                .toList();
+
+        List<ProgressMapNode> nodes = orderedNodes.stream()
+                .map(node -> new ProgressMapNode(
+                        node.getNodeKey(),
+                        abbreviateLabel(node.getTitle()),
+                        node.isStartNode(),
+                        node.isTerminalNode()
+                ))
+                .toList();
+
+        return new ProgressMapState(nodes, visitedNodeKeys, attempt.getCurrentNode().getNodeKey());
+    }
+
     @Transactional(readOnly = true)
     public AttemptState getAttempt(UUID attemptId, String attemptToken, User actor) {
         SimulationAttemptEntity attempt = requireAttempt(attemptId, attemptToken, actor);
         return toAttemptState(attempt, attemptToken, null);
+    }
+
+    @Transactional(readOnly = true)
+    public AttemptCompletionReport getCompletionReport(UUID attemptId, String attemptToken, User actor) {
+        SimulationAttemptEntity attempt = requireAttempt(attemptId, attemptToken, actor);
+        if (attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("El intento aun esta en progreso");
+        }
+        return completionReportBuilder.build(attempt, eventRepository.findByAttemptIdOrderByOccurredAt(attemptId));
     }
 
     @Auditable(action = "DECISION_SELECTED", resourceType = "ATTEMPT")
@@ -127,17 +197,16 @@ public class SimulationGameService {
             throw new IllegalArgumentException("La decision no pertenece al caso del intento");
         }
 
-        int scoreDelta = decision.getScoreDelta() + (decision.isProhibitedConduct() ? decision.getProhibitedPenalty() : 0);
-        int stressDelta = decision.getStressDelta() + (decision.isProhibitedConduct() ? 40 : 0);
+        DecisionEffectCalculator.DecisionEffects effects = decisionEffectCalculator.resolve(decision);
+        decisionEffectCalculator.apply(attempt, effects);
         AttemptEventType eventType = decision.isProhibitedConduct()
                 ? AttemptEventType.PROHIBITED_DECISION_SELECTED
                 : AttemptEventType.DECISION_SELECTED;
 
-        attempt.setAccumulatedScore(attempt.getAccumulatedScore() + scoreDelta);
-        attempt.setStressIndex(clamp(attempt.getStressIndex() + stressDelta, 0, 100));
         attempt.setCurrentNode(decision.getTargetNode());
 
-        saveEvent(attempt, eventType, decision.getSourceNode(), decision, scoreDelta, stressDelta, decision.getImmediateFeedback());
+        saveEvent(attempt, eventType, decision.getSourceNode(), decision, effects.scoreDelta(), effects.stressDelta(),
+                decisionEffectCalculator.formatFeedback(decision, effects));
         saveEvent(attempt, AttemptEventType.NODE_ENTERED, decision.getTargetNode(), null, 0, 0, "Nodo visitado");
 
         if (decision.getTargetNode().isTerminalNode()) {
@@ -150,10 +219,14 @@ public class SimulationGameService {
 
         Feedback feedback = new Feedback(
                 decision.getClassification().name(),
-                scoreDelta,
-                stressDelta,
+                effects.scoreDelta(),
+                effects.stressDelta(),
+                effects.trustDelta(),
+                effects.victimRiskDelta(),
                 decision.isProhibitedConduct(),
-                decision.getImmediateFeedback(),
+                effects.institutionalRouteActivated(),
+                effects.revictimizationRisk(),
+                decisionEffectCalculator.formatFeedback(decision, effects),
                 decision.getProhibitionReason()
         );
         return toAttemptState(attempt, attemptToken, feedback);
@@ -240,6 +313,9 @@ public class SimulationGameService {
     }
 
     private AttemptState toAttemptState(SimulationAttemptEntity attempt, String rawToken, Feedback feedback) {
+        AttemptCompletionReport completionReport = attempt.getStatus() == AttemptStatus.IN_PROGRESS
+                ? null
+                : completionReportBuilder.build(attempt, eventRepository.findByAttemptIdOrderByOccurredAt(attempt.getId()));
         return new AttemptState(
                 attempt.getId(),
                 rawToken,
@@ -248,8 +324,10 @@ public class SimulationGameService {
                 attempt.getStatus().name(),
                 attempt.getAccumulatedScore(),
                 attempt.getStressIndex(),
+                completionReportBuilder.toMetrics(attempt),
                 toNodeState(attempt.getCurrentNode(), attempt.getStatus() == AttemptStatus.IN_PROGRESS),
                 feedback,
+                completionReport,
                 attempt.getStatus() == AttemptStatus.SAFE_EXITED ? SAFE_EXIT_RESOURCES : List.of()
         );
     }
@@ -320,6 +398,94 @@ public class SimulationGameService {
             reflection.setUpdatedAt(LocalDateTime.now());
             reflectionRepository.save(reflection);
         });
+    }
+
+    private String reissueToken(SimulationAttemptEntity attempt) {
+        AttemptToken token = AttemptToken.create();
+        attempt.setAttemptTokenHash(hashToken(token.value()));
+        attemptRepository.save(attempt);
+        return token.value();
+    }
+
+    private void closeActiveAttempts(Long studentId, Long caseVersionId, String reason) {
+        List<SimulationAttemptEntity> activeAttempts = attemptRepository
+                .findByStudent_IdAndCaseVersion_IdAndStatus(studentId, caseVersionId, AttemptStatus.IN_PROGRESS);
+        for (SimulationAttemptEntity active : activeAttempts) {
+            active.setStatus(AttemptStatus.SAFE_EXITED);
+            active.setEndedAt(LocalDateTime.now());
+            active.setLockedAt(LocalDateTime.now());
+            lockReflections(active);
+            saveEvent(
+                    active,
+                    AttemptEventType.SAFE_EXIT_REQUESTED,
+                    active.getCurrentNode(),
+                    null,
+                    0,
+                    0,
+                    reason
+            );
+            attemptRepository.save(active);
+        }
+    }
+
+    private List<SimulationNodeEntity> orderNodesForProgressMap(Long caseVersionId) {
+        List<SimulationNodeEntity> allNodes = nodeRepository.findByCaseVersionIdOrderById(caseVersionId);
+        if (allNodes.isEmpty()) {
+            return List.of();
+        }
+
+        SimulationNodeEntity startNode = nodeRepository.findByCaseVersionIdAndStartNodeTrue(caseVersionId)
+                .orElse(allNodes.getFirst());
+
+        Map<Long, List<Long>> adjacency = new LinkedHashMap<>();
+        for (SimulationNodeEntity node : allNodes) {
+            adjacency.putIfAbsent(node.getId(), new ArrayList<>());
+        }
+        decisionRepository.findByCaseVersionIdOrderById(caseVersionId).forEach(decision -> {
+            adjacency.computeIfAbsent(decision.getSourceNode().getId(), key -> new ArrayList<>())
+                    .add(decision.getTargetNode().getId());
+        });
+
+        Map<Long, SimulationNodeEntity> byId = new LinkedHashMap<>();
+        for (SimulationNodeEntity node : allNodes) {
+            byId.put(node.getId(), node);
+        }
+
+        List<SimulationNodeEntity> ordered = new ArrayList<>();
+        Set<Long> visited = new HashSet<>();
+        List<Long> queue = new ArrayList<>();
+        queue.add(startNode.getId());
+
+        while (!queue.isEmpty()) {
+            Long currentId = queue.removeFirst();
+            if (!visited.add(currentId)) {
+                continue;
+            }
+            SimulationNodeEntity current = byId.get(currentId);
+            if (current != null) {
+                ordered.add(current);
+            }
+            for (Long nextId : adjacency.getOrDefault(currentId, List.of())) {
+                if (!visited.contains(nextId)) {
+                    queue.add(nextId);
+                }
+            }
+        }
+
+        for (SimulationNodeEntity node : allNodes) {
+            if (!visited.contains(node.getId())) {
+                ordered.add(node);
+            }
+        }
+        return ordered;
+    }
+
+    private static String abbreviateLabel(String title) {
+        if (title == null || title.isBlank()) {
+            return "Nodo";
+        }
+        String trimmed = title.trim();
+        return trimmed.length() <= 14 ? trimmed : trimmed.substring(0, 13) + "…";
     }
 
     private static int clamp(int value, int min, int max) {

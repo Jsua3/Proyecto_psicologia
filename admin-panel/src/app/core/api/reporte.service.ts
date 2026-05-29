@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { Dashboard, ReporteGrupo } from '../models/sesion.model';
 
@@ -14,14 +14,20 @@ export class ReporteService {
     return this.http.get<ApiResponse<Dashboard>>(`${this.API}/dashboard`).pipe(map(r => r.data));
   }
 
-  getReporteGrupo(grupoId: number, casoId: number) {
-    return this.http.get<ApiResponse<ReporteGrupo>>(
-      `${this.API}/grupo/${grupoId}?casoId=${casoId}`
-    ).pipe(map(r => r.data));
+  getReporteGrupo(grupoId: number, casoId?: number | null, caseVersionId?: number | null) {
+    let params = new HttpParams();
+    if (casoId != null) params = params.set('casoId', casoId);
+    if (caseVersionId != null) params = params.set('caseVersionId', caseVersionId);
+    return this.http.get<ApiResponse<ReporteGrupo>>(`${this.API}/grupo/${grupoId}`, { params })
+      .pipe(map(r => r.data));
   }
 
-  exportarCsv(grupoId: number, casoId: number) {
-    return this.http.get(`${this.API}/grupo/${grupoId}/export?casoId=${casoId}`, {
+  exportarCsv(grupoId: number, casoId?: number | null, caseVersionId?: number | null) {
+    let params = new HttpParams();
+    if (casoId != null) params = params.set('casoId', casoId);
+    if (caseVersionId != null) params = params.set('caseVersionId', caseVersionId);
+    return this.http.get(`${this.API}/grupo/${grupoId}/export`, {
+      params,
       responseType: 'blob'
     });
   }

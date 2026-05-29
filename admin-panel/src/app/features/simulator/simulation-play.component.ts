@@ -5,16 +5,24 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SimulationService } from '../../core/api/simulation.service';
 import {
-  DialogueState, MapObjectState, SimulationAttemptState,
+  DialogueState, MapObjectState, ProgressMapState, SimulationAttemptState,
   SimulationFeedback, SimulationWorldState, ToolUseResult
 } from '../../core/models/simulation.model';
 import { DialoguePanelComponent } from './dialogue-panel.component';
 import { GameWorldComponent } from './game-world.component';
-import { JournalPanelComponent } from './journal-panel.component';
+import { JournalPanelComponent, JournalSaveState } from './journal-panel.component';
 import { MinimapComponent, MinimapStage } from './minimap.component';
 import { SimulationHudComponent } from './simulation-hud.component';
 import { ToolInventoryComponent } from './tool-inventory.component';
 import { AudioService } from './audio.service';
+import {
+  PROTOCOL_INFO_MESSAGE,
+  RESTRICTED_AREA_BLOCK_MESSAGE,
+  getDisplayLabel,
+  getInteractionDescription,
+  isAmbientInteraction,
+  isRestrictedAreaInteraction,
+} from './hospital-map.config';
 
 @Component({
   selector: 'app-simulation-play',
@@ -37,6 +45,36 @@ import { AudioService } from './audio.service';
           <a class="psy-button psy-button--ghost" routerLink="/portal/simulador">Volver al simulador</a>
         </div>
       }
+      @if (actionError()) {
+        <div class="action-toast" role="alert">{{ actionError() }}</div>
+      }
+
+      @if (showResumePrompt() && pendingActiveAttempt(); as active) {
+        <section class="resume-overlay" role="dialog" aria-labelledby="resume-title">
+          <article class="resume-card liquid-glass">
+            <p class="psy-eyebrow">Intento en progreso</p>
+            <h2 id="resume-title">Continuar simulación formativa</h2>
+            <p>
+              Ya tienes un intento activo en <strong>{{ active.caseTitle }}</strong>.
+              Puedes retomarlo desde <strong>{{ active.currentNode.title }}</strong> o iniciar uno nuevo.
+            </p>
+            <div class="resume-metrics">
+              <span>Puntaje: {{ active.accumulatedScore }}</span>
+              <span>Estrés: {{ active.stressIndex }}%</span>
+              <span>Riesgo: {{ active.metrics.victimRisk }}%</span>
+            </div>
+            <div class="resume-actions">
+              <button class="psy-button psy-button--primary" type="button" (click)="resumeAttempt()">
+                Continuar intento en progreso
+              </button>
+              <button class="psy-button psy-button--ghost" type="button" (click)="startNewAttempt()">
+                Iniciar nuevo intento
+              </button>
+              <a class="psy-button psy-button--ghost" routerLink="/portal/simulador">Volver al catálogo</a>
+            </div>
+          </article>
+        </section>
+      }
 
       @if (attempt(); as game) {
         @if (world(); as w) {
@@ -49,13 +87,25 @@ import { AudioService } from './audio.service';
         }
 
         <app-simulation-hud class="hud-layer" [attempt]="game" [stressPulse]="stressPulse()" />
-        <app-minimap class="minimap-layer" [stages]="stages" [currentNodeKey]="game.currentNode.key" />
+        <app-minimap class="minimap-layer"
+          [stages]="minimapStages()"
+          [currentNodeKey]="game.currentNode.key"
+          [visitedNodeKeys]="visitedNodeKeys()" />
         <app-tool-inventory class="tools-layer" [tools]="world()?.tools ?? []"
           [inventory]="world()?.inventory ?? []" (select)="selectTool($event)" />
 
         @if (nearbyInteraction(); as nb) {
-          <div class="proximity-hint" [class.proximity-hint--exit]="nb.type === 'EXIT'" aria-live="polite" aria-atomic="true">
-            <kbd>E</kbd><span>{{ nb.type === 'EXIT' ? nb.label + ' →' : nb.label }}</span>
+          <div class="proximity-hint"
+            [class.proximity-hint--exit]="nb.type === 'EXIT'"
+            [class.proximity-hint--rich]="proximityDescription(nb)"
+            aria-live="polite" aria-atomic="true">
+            <div class="proximity-hint__body">
+              <strong>{{ proximityLabel(nb) }}</strong>
+              @if (proximityDescription(nb); as desc) {
+                <p>{{ desc }}</p>
+              }
+              <span class="proximity-hint__action"><kbd>E</kbd> Presiona E para interactuar</span>
+            </div>
           </div>
         }
 
@@ -71,7 +121,7 @@ import { AudioService } from './audio.service';
           </button>
         }
 
-        <div class="controls-hint" aria-hidden="true">WASD/↑↓←→ · E interactuar · J bitácora · Esc salida</div>
+        <div class="controls-hint" aria-hidden="true">Mover: WASD/flechas · E decisión o interacción · J bitácora reflexiva · Esc salida segura</div>
 
         <app-dialogue-panel class="dialogue-layer" [dialogue]="dialogue()" [interaction]="selectedInteraction()"
           (close)="closeDialogue()" (execute)="executeDecision($event)" (useTool)="useTool($event)" />
@@ -81,6 +131,7 @@ import { AudioService } from './audio.service';
 
         <app-journal-panel #journalPanel class="journal-layer" [open]="journalOpen()"
           [disabled]="game.status !== 'IN_PROGRESS' || busy()" [message]="journalMessage()"
+          [saveState]="journalSaveState()"
           (save)="saveReflection($event)" (closeSheet)="journalOpen.set(false)" />
 
         <!-- Fase 7: screen-reader narrative route -->
@@ -101,8 +152,8 @@ import { AudioService } from './audio.service';
           <div role="list">
             @for (obj of world()?.objects ?? []; track obj.key) {
               <button role="listitem" type="button" class="sr-only"
-                [attr.aria-label]="obj.label + ': ' + obj.interactionPrompt"
-                (click)="openInteraction(obj)">{{ obj.label }}</button>
+                [attr.aria-label]="proximityLabel(obj) + ': ' + proximityDescription(obj)"
+                (click)="openInteraction(obj)">{{ proximityLabel(obj) }}</button>
             }
           </div>
         </section>
@@ -112,11 +163,37 @@ import { AudioService } from './audio.service';
             [class.end-state--safe]="game.status === 'SAFE_EXITED'" role="alert">
             <mat-icon>{{ game.status === 'COMPLETED' ? 'workspace_premium' : 'exit_to_app' }}</mat-icon>
             <div>
-              <p class="psy-eyebrow">{{ game.status === 'COMPLETED' ? 'Misión completada' : 'Salida segura' }}</p>
-              <h3>{{ game.status === 'COMPLETED' ? 'El intento quedó cerrado para evaluación docente.' : 'El intento fue pausado de forma limpia.' }}</h3>
-              <p>{{ game.status === 'COMPLETED'
-                ? 'La ruta recorrida, decisiones, puntaje, estrés y bitácoras quedaron registrados.'
-                : 'Puedes revisar recursos de apoyo o retomar con acompañamiento institucional.' }}</p>
+              <p class="psy-eyebrow">{{ game.status === 'COMPLETED' ? 'Cierre formativo' : 'Salida segura registrada' }}</p>
+              <h3>{{ game.completionReport?.summaryMessage ?? (game.status === 'COMPLETED'
+                ? 'El intento quedó cerrado para evaluación docente.'
+                : 'El intento fue pausado de forma limpia, sin penalización.') }}</h3>
+              @if (game.completionReport; as report) {
+                <div class="report-grid">
+                  <div><strong>Seguimiento formativo</strong><span>{{ report.finalScore }}</span></div>
+                  <div><strong>Estrés final</strong><span>{{ report.finalStress }}%</span></div>
+                  <div><strong>Confianza</strong><span>{{ report.metrics.userTrust }}%</span></div>
+                  <div><strong>Riesgo</strong><span>{{ report.metrics.victimRisk }}%</span></div>
+                </div>
+                <ul class="report-list">
+                  <li>Adecuadas: {{ report.adequateDecisions }}</li>
+                  <li>Riesgosas: {{ report.riskyDecisions }}</li>
+                  <li>Inadecuadas: {{ report.inadequateDecisions }}</li>
+                  @if (report.prohibitedDecisions) { <li>Alertas éticas: {{ report.prohibitedDecisions }}</li> }
+                </ul>
+                @if (report.competencies.length) {
+                  <p><strong>Competencias trabajadas:</strong> {{ report.competencies.join(' · ') }}</p>
+                }
+                @if (report.recommendations.length) {
+                  <p><strong>Recomendaciones:</strong> {{ report.recommendations.join(' ') }}</p>
+                }
+              }
+              @if (game.supportResources.length) {
+                <ul class="support-list">
+                  @for (resource of game.supportResources; track resource) {
+                    <li>{{ resource }}</li>
+                  }
+                </ul>
+              }
             </div>
             <a class="psy-button psy-button--primary" routerLink="/portal/simulador">
               <mat-icon aria-hidden="true">arrow_back</mat-icon>Volver al simulador
@@ -140,12 +217,36 @@ import { AudioService } from './audio.service';
     app-tool-inventory.tools-layer { position: absolute; bottom: 118px; left: 12px; z-index: 50; }
     .proximity-hint {
       position: absolute; bottom: 118px; left: 50%; transform: translateX(-50%); z-index: 50;
-      display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
-      background: rgba(8,12,18,.82); border: 1px solid rgba(79,163,165,.3);
-      color: #e8f0f4; font-size: .82rem; font-weight: 700; white-space: nowrap; pointer-events: none;
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 10px 14px; border-radius: 12px;
+      background: rgba(8,12,18,.88); border: 1px solid rgba(79,163,165,.3);
+      color: #e8f0f4; pointer-events: none;
       animation: hint-rise 160ms ease both;
     }
-    .proximity-hint--exit { border-color: rgba(79,163,165,.6); color: #4fa3a5; }
+    .proximity-hint--rich { text-align: left; }
+    .proximity-hint__body { display: grid; gap: 4px; }
+    .proximity-hint__body strong {
+      font-size: .84rem;
+      color: #9dc0e8;
+      line-height: 1.3;
+    }
+    .proximity-hint__body p {
+      margin: 0;
+      font-size: .76rem;
+      line-height: 1.4;
+      color: rgba(232,240,244,.78);
+    }
+    .proximity-hint__action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .7rem;
+      font-weight: 700;
+      color: rgba(79,163,165,.85);
+      margin-top: 2px;
+    }
+    .proximity-hint--exit { border-color: rgba(79,163,165,.6); }
+    .proximity-hint--exit .proximity-hint__body strong { color: #4fa3a5; }
     .proximity-hint kbd {
       padding: 2px 7px; border-radius: 5px; background: rgba(79,163,165,.18);
       border: 1px solid rgba(79,163,165,.35); font-size: .76rem;
@@ -190,7 +291,7 @@ import { AudioService } from './audio.service';
       border-radius: 22px; background: rgba(79,163,165,.14); color: #4fa3a5;
     }
     .end-state--safe mat-icon { color: rgba(232,240,244,.6); background: rgba(232,240,244,.06); }
-    .end-state-overlay h3 { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; }
+    .end-state-overlay h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; font-size: 1.5rem; letter-spacing: 0; }
     .end-state-overlay p  { margin: 0; color: rgba(232,240,244,.55); line-height: 1.6; max-width: 560px; }
     .scene-fade {
       position: fixed; inset: 0; z-index: 200; background: #0a0f14; opacity: 0;
@@ -205,6 +306,39 @@ import { AudioService } from './audio.service';
     }
     .error-overlay mat-icon { font-size: 36px; color: rgba(168,80,98,.8); }
     .error-overlay p { margin: 0; color: rgba(232,240,244,.6); }
+    .action-toast {
+      position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 320;
+      max-width: min(92vw, 520px); padding: 10px 16px; border-radius: 12px;
+      background: rgba(143,47,61,.92); color: #fff; font-weight: 700; text-align: center;
+    }
+    .resume-overlay {
+      position: absolute; inset: 0; z-index: 400; display: grid; place-items: center;
+      padding: 24px; background: rgba(8,12,18,.88);
+    }
+    .resume-card {
+      width: min(560px, 100%); padding: clamp(24px, 4vw, 36px); color: #e8f0f4; text-align: left;
+    }
+    .resume-card h2 { margin: 12px 0; color: #fff; font-size: 1.6rem; }
+    .resume-card p { margin: 0; color: rgba(232,240,244,.72); line-height: 1.6; }
+    .resume-metrics {
+      display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0;
+    }
+    .resume-metrics span {
+      padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08); font-size: .82rem; font-weight: 700;
+    }
+    .resume-actions { display: grid; gap: 10px; margin-top: 20px; }
+    .resume-actions .psy-button { width: 100%; }
+    .report-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0;
+    }
+    .report-grid div {
+      display: grid; gap: 4px; padding: 10px; border-radius: 12px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+    }
+    .report-grid strong { font-size: .72rem; color: rgba(232,240,244,.55); text-transform: uppercase; letter-spacing: .06em; }
+    .report-grid span { font-size: 1.2rem; color: #4fa3a5; font-weight: 800; }
+    .report-list, .support-list { text-align: left; margin: 10px auto; padding-left: 18px; color: rgba(232,240,244,.65); }
     @keyframes hint-rise {
       from { opacity: 0; transform: translateX(-50%) translateY(6px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -223,11 +357,16 @@ export class SimulationPlayComponent implements OnInit {
   @ViewChild('journalPanel') private journalPanel?: JournalPanelComponent;
 
   readonly attempt    = signal<SimulationAttemptState | null>(null);
+  readonly pendingActiveAttempt = signal<SimulationAttemptState | null>(null);
+  readonly showResumePrompt = signal(false);
+  readonly progressMap = signal<ProgressMapState | null>(null);
   readonly world      = signal<SimulationWorldState | null>(null);
   readonly loading    = signal(true);
   readonly busy       = signal(false);
   readonly error      = signal('');
+  readonly actionError = signal('');
   readonly journalMessage      = signal('');
+  readonly journalSaveState    = signal<JournalSaveState>('idle');
   readonly nearbyInteraction   = signal<MapObjectState | null>(null);
   readonly selectedInteraction = signal<MapObjectState | null>(null);
   readonly dialogue    = signal<DialogueState | null>(null);
@@ -236,14 +375,16 @@ export class SimulationPlayComponent implements OnInit {
   readonly journalOpen  = signal(false);
   readonly fadeActive   = signal(false);
 
-  readonly stages: MinimapStage[] = [
-    { key: 'urgencias-crisis',     label: 'Crisis'  },
-    { key: 'ruta-proteccion',      label: 'Ruta'    },
-    { key: 'informe-integral',     label: 'Informe' },
-    { key: 'valoracion-comisaria', label: 'Riesgo'  },
-    { key: 'proteccion-nna',       label: 'NNA'     },
-    { key: 'cierre-seguimiento',   label: 'Cierre'  }
-  ];
+  readonly minimapStages = computed<MinimapStage[]>(() => {
+    const map = this.progressMap();
+    if (map?.nodes.length) {
+      return map.nodes.map(node => ({ key: node.key, label: node.label }));
+    }
+    const game = this.attempt();
+    return game ? [{ key: game.currentNode.key, label: game.currentNode.title.slice(0, 14) }] : [];
+  });
+
+  readonly visitedNodeKeys = computed(() => this.progressMap()?.visitedNodeKeys ?? []);
 
   readonly stressVignetteLevel = computed(() => {
     const s = this.attempt()?.stressIndex ?? 0;
@@ -257,10 +398,52 @@ export class SimulationPlayComponent implements OnInit {
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('caseVersionId'));
     if (!id) { this.error.set('Caso no encontrado.'); this.loading.set(false); return; }
-    this.simulationService.startAttempt(id).subscribe({
-      next: attempt => { this.attempt.set(attempt); this.loadWorld(attempt); },
-      error: () => { this.error.set('No pudimos iniciar la simulación. Revisa tus permisos.'); this.loading.set(false); }
+
+    this.simulationService.getActiveAttempt(id).subscribe({
+      next: active => {
+        if (active?.status === 'IN_PROGRESS') {
+          this.pendingActiveAttempt.set(active);
+          this.showResumePrompt.set(true);
+          this.loading.set(false);
+          return;
+        }
+        this.beginAttempt(id, false);
+      },
+      error: () => this.beginAttempt(id, false)
     });
+  }
+
+  resumeAttempt() {
+    const active = this.pendingActiveAttempt();
+    if (!active) return;
+    this.showResumePrompt.set(false);
+    this.loading.set(true);
+    this.bootstrapAttempt(active);
+  }
+
+  startNewAttempt() {
+    const id = Number(this.route.snapshot.paramMap.get('caseVersionId'));
+    if (!id) return;
+    this.showResumePrompt.set(false);
+    this.loading.set(true);
+    this.beginAttempt(id, true);
+  }
+
+  private beginAttempt(caseVersionId: number, forceNew: boolean) {
+    this.simulationService.startAttempt(caseVersionId, forceNew).subscribe({
+      next: attempt => this.bootstrapAttempt(attempt),
+      error: () => {
+        this.error.set('No pudimos iniciar la simulación. Revisa tus permisos.');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private bootstrapAttempt(attempt: SimulationAttemptState) {
+    this.attempt.set(attempt);
+    this.persistAttemptToken(attempt);
+    this.loadProgressMap(attempt);
+    this.loadWorld(attempt);
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -295,6 +478,17 @@ export class SimulationPlayComponent implements OnInit {
   openInteraction(interaction: MapObjectState) {
     const game = this.attempt();
     if (!game || game.status !== 'IN_PROGRESS') return;
+
+    if (isAmbientInteraction(interaction.key)) {
+      this.showAmbientDialogue(interaction);
+      return;
+    }
+
+    if (isRestrictedAreaInteraction(interaction.key)) {
+      this.showRestrictedAreaBlock(interaction);
+      return;
+    }
+
     this.selectedInteraction.set(interaction);
     this.gameWorld?.focus(interaction.key);
     this.busy.set(true);
@@ -305,8 +499,59 @@ export class SimulationPlayComponent implements OnInit {
         this.dialogue.set(result.dialogue ?? result.interaction.dialogue);
         this.busy.set(false);
       },
-      error: () => { this.error.set('No pudimos abrir la interacción.'); this.busy.set(false); }
+      error: () => { this.showActionError('No pudimos abrir la interacción.'); this.busy.set(false); }
     });
+  }
+
+  proximityLabel(obj: MapObjectState): string {
+    if (obj.type === 'EXIT') return `${getDisplayLabel(obj)} →`;
+    return getDisplayLabel(obj);
+  }
+
+  proximityDescription(obj: MapObjectState): string {
+    return getInteractionDescription(obj);
+  }
+
+  private showRestrictedAreaBlock(interaction: MapObjectState) {
+    this.selectedInteraction.set(interaction);
+    this.gameWorld?.focus(interaction.key);
+    this.dialogue.set({
+      key: 'hospital-restricted-area',
+      speakerName: 'Protocolo clínico',
+      portraitKey: 'block',
+      emotion: 'concerned',
+      lines: [{
+        order: 1,
+        speakerName: 'Protocolo clínico',
+        text: RESTRICTED_AREA_BLOCK_MESSAGE,
+        emotion: 'concerned',
+      }],
+      choices: [],
+    });
+  }
+
+  private showAmbientDialogue(interaction: MapObjectState) {
+    this.selectedInteraction.set(interaction);
+    this.dialogue.set({
+      key: interaction.key,
+      speakerName: interaction.label,
+      portraitKey: 'info',
+      emotion: 'neutral',
+      lines: [{
+        order: 1,
+        speakerName: interaction.label,
+        text: interaction.key === 'ambient:protocolo-noticia-dificil'
+          ? PROTOCOL_INFO_MESSAGE
+          : getInteractionDescription(interaction),
+        emotion: 'neutral',
+      }],
+      choices: [],
+    });
+  }
+
+  private showActionError(message: string) {
+    this.actionError.set(message);
+    window.setTimeout(() => this.actionError.set(''), 4500);
   }
 
   executeDecision(decisionOptionId: number) {
@@ -319,15 +564,17 @@ export class SimulationPlayComponent implements OnInit {
       this.simulationService.chooseDecision(game.attemptId, game.attemptToken, decisionOptionId).subscribe({
         next: updated => {
           this.attempt.set(updated);
+          this.persistAttemptToken(updated);
           this.selectedInteraction.set(null);
           this.nearbyInteraction.set(null);
           this.journalPanel?.clear();
+          this.loadProgressMap(updated);
           this.loadWorld(updated);
           if (updated.feedback) {
             window.setTimeout(() => this.dialogue.set(this.buildSupervisionDialogue(updated.feedback!)), 400);
           }
         },
-        error: () => { this.error.set('No pudimos ejecutar la intervención.'); this.busy.set(false); this.fadeActive.set(false); }
+        error: () => { this.showActionError('No pudimos ejecutar la intervención.'); this.busy.set(false); this.fadeActive.set(false); }
       });
     });
   }
@@ -345,7 +592,7 @@ export class SimulationPlayComponent implements OnInit {
         this.showToolFeedback(result);
         this.busy.set(false);
       },
-      error: () => { this.error.set('No pudimos usar la herramienta.'); this.busy.set(false); }
+      error: () => { this.showActionError('No pudimos usar la herramienta.'); this.busy.set(false); }
     });
   }
 
@@ -371,9 +618,18 @@ export class SimulationPlayComponent implements OnInit {
     const game = this.attempt();
     if (!game || !text.trim() || this.busy()) return;
     this.busy.set(true);
+    this.journalSaveState.set('saving');
     this.simulationService.saveReflection(game.attemptId, game.attemptToken, game.currentNode.id, text.trim()).subscribe({
-      next: () => { this.journalMessage.set('Bitácora guardada y cifrada.'); this.busy.set(false); },
-      error: () => { this.journalMessage.set('No pudimos guardar la bitácora.'); this.busy.set(false); }
+      next: () => {
+        this.journalMessage.set('Bitácora guardada y cifrada.');
+        this.journalSaveState.set('saved');
+        this.busy.set(false);
+      },
+      error: () => {
+        this.journalMessage.set('No pudimos guardar la bitácora.');
+        this.journalSaveState.set('error');
+        this.busy.set(false);
+      }
     });
   }
 
@@ -383,7 +639,7 @@ export class SimulationPlayComponent implements OnInit {
     this.busy.set(true);
     this.simulationService.safeExit(game.attemptId, game.attemptToken, 'Salida segura solicitada').subscribe({
       next: updated => { this.attempt.set(updated); this.selectedInteraction.set(null); this.dialogue.set(null); this.loadWorld(updated); },
-      error: () => { this.error.set('No pudimos registrar la salida segura.'); this.busy.set(false); }
+      error: () => { this.showActionError('No pudimos registrar la salida segura.'); this.busy.set(false); }
     });
   }
 
@@ -424,7 +680,12 @@ export class SimulationPlayComponent implements OnInit {
     if (feedback.prohibitionReason) {
       lines.push({ order: 2, speakerName: 'Supervisión clínica', text: feedback.prohibitionReason, emotion: 'danger' });
     }
-    lines.push({ order: lines.length+1, speakerName: '', text: `Puntaje ${feedback.scoreDelta>=0?'+':''}${feedback.scoreDelta} · Estrés ${feedback.stressDelta>=0?'+':''}${feedback.stressDelta}%`, emotion: 'neutral' });
+    lines.push({
+      order: lines.length + 1,
+      speakerName: '',
+      text: `Puntaje ${feedback.scoreDelta >= 0 ? '+' : ''}${feedback.scoreDelta} · Estrés ${feedback.stressDelta >= 0 ? '+' : ''}${feedback.stressDelta}% · Confianza ${feedback.trustDelta >= 0 ? '+' : ''}${feedback.trustDelta} · Riesgo ${feedback.victimRiskDelta >= 0 ? '+' : ''}${feedback.victimRiskDelta}`,
+      emotion: 'neutral'
+    });
     return {
       key: `supervision-${Date.now()}`, speakerName: 'Supervisión clínica',
       portraitKey: null,
@@ -437,6 +698,13 @@ export class SimulationPlayComponent implements OnInit {
     this.audio.play('scene-transition');
     this.fadeActive.set(true);
     window.setTimeout(callback, 340);
+  }
+
+  private loadProgressMap(attempt: SimulationAttemptState) {
+    this.simulationService.getProgressMap(attempt.attemptId, attempt.attemptToken).subscribe({
+      next: map => this.progressMap.set(map),
+      error: () => this.progressMap.set(null)
+    });
   }
 
   private loadWorld(attempt: SimulationAttemptState) {
@@ -459,6 +727,13 @@ export class SimulationPlayComponent implements OnInit {
   private announce(message: string): void {
     this.a11yAnnouncement.set('');
     window.setTimeout(() => this.a11yAnnouncement.set(message), 50);
+  }
+
+  private persistAttemptToken(attempt: SimulationAttemptState) {
+    sessionStorage.setItem(`siep_attempt_${attempt.caseVersionId}`, JSON.stringify({
+      attemptId: attempt.attemptId,
+      attemptToken: attempt.attemptToken
+    }));
   }
 
   private persistPosition() {

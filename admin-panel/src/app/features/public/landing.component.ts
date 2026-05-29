@@ -3,6 +3,7 @@ import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { APP_BRAND } from '../../core/config/brand.config';
 
 interface SectionCard {
   icon: string;
@@ -26,11 +27,11 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
   imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule],
   template: `
     <nav class="psy-public-nav liquid-glass" aria-label="Navegación pública">
-      <a class="brand" href="#inicio" aria-label="Programa de Psicología Humboldt">
+      <a class="brand" href="#inicio" [attr.aria-label]="brand.formalName">
         <img src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="74" height="37">
         <span>
-          <strong>Psicología Humboldt</strong>
-          <small>Facultad de Ciencias Humanas y de la Educación</small>
+          <strong>{{ brand.shortName }}</strong>
+          <small>{{ brand.fullName }}</small>
         </span>
       </a>
 
@@ -39,12 +40,13 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
       </button>
 
       <div class="nav-links" [class.nav-links--open]="menuOpen()">
+        <a href="#plataforma">Plataforma</a>
+        <a href="#modulos">Módulos</a>
+        <a href="#roles">Roles</a>
+        <a href="#etica">Ética</a>
         <a href="#programa">Programa</a>
-        <a href="#clinica">CIP</a>
-        <a href="#investigacion">Investigación</a>
-        <a href="#bienestar">Bienestar</a>
         <a href="#contacto">Contacto</a>
-        <a class="portal-link" routerLink="/login">Portal PsychoSim</a>
+        <a class="portal-link" routerLink="/login">Ingresar al sistema</a>
       </div>
     </nav>
 
@@ -52,45 +54,120 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-overlay"></div>
         <div class="hero-content psy-reveal">
-          <p class="psy-eyebrow">Corporación Universitaria Empresarial Alexander Von Humboldt</p>
-          <h1 id="hero-title" class="psy-title">Programa de Psicología</h1>
-          <p class="psy-subtitle">
-            Formación profesional acreditada en alta calidad, con práctica en contextos reales, investigación,
-            proyección social y acompañamiento humano desde Armenia, Quindío.
-          </p>
-          <div class="hero-badges" aria-label="Reconocimientos del programa">
-            <span class="psy-chip">SNIES 101645</span>
-            <span class="psy-chip">Alta Calidad MEN</span>
-            <span class="psy-chip">Presencial en Armenia</span>
+          <p class="psy-eyebrow">{{ brand.institution }}</p>
+          <h1 id="hero-title" class="psy-title">{{ brand.shortName }}</h1>
+          <p class="hero-fullname">{{ brand.fullName }}</p>
+          <p class="psy-subtitle">{{ brand.subtitle }}</p>
+          <p class="hero-description">{{ brand.description }}</p>
+          <div class="hero-badges" aria-label="Enfoque académico">
+            <span class="psy-chip">Simulación formativa</span>
+            <span class="psy-chip">Trazabilidad docente</span>
+            <span class="psy-chip">Evaluación con rúbricas</span>
           </div>
           <div class="psy-action-row hero-actions">
-            <a class="psy-button psy-button--primary" [href]="psychologyProgramUrl" target="_blank" rel="noopener">
-              <mat-icon>school</mat-icon>
-              Conoce el programa
-            </a>
-            <a class="psy-button psy-button--glass" href="#clinica">
-              <mat-icon>psychology</mat-icon>
-              Centro Integral de Psicología
-            </a>
-            <a class="psy-button psy-button--ghost" routerLink="/login">
+            <a class="psy-button psy-button--primary" routerLink="/login">
               <mat-icon>login</mat-icon>
-              Ingresar al portal
+              Ingresar al sistema
+            </a>
+            <a class="psy-button psy-button--ghost" href="#modulos">
+              <mat-icon>view_module</mat-icon>
+              Ver módulos
+            </a>
+            <a class="psy-button psy-button--ghost" [href]="psychologyProgramUrl" target="_blank" rel="noopener">
+              <mat-icon>school</mat-icon>
+              Programa de Psicología
             </a>
           </div>
         </div>
 
-        <div class="metrics liquid-glass" aria-label="Indicadores oficiales del programa">
-          @for (metric of metrics; track metric.label) {
-            <div class="metric">
-              <strong>{{ metric.value }}</strong>
-              <span>{{ metric.label }}</span>
-            </div>
-          }
-        </div>
-
-        <a class="next-cue" href="#programa" aria-label="Ir a datos del programa">
+        <a class="next-cue" href="#plataforma" aria-label="Conocer la plataforma">
           <mat-icon>keyboard_arrow_down</mat-icon>
         </a>
+      </section>
+
+      <section id="plataforma" class="psy-section soft-band">
+        <div class="psy-section__inner split">
+          <div>
+            <p class="psy-eyebrow">Propósito académico</p>
+            <h2 class="section-title">Entrenamiento psicosocial con trazabilidad y evaluación formativa.</h2>
+          </div>
+          <p class="section-copy">{{ brand.objective }}</p>
+        </div>
+        <div class="psy-section__inner psy-grid psy-grid--3 card-row">
+          @for (benefit of benefits; track benefit.title) {
+            <article class="siep-card">
+              <mat-icon>{{ benefit.icon }}</mat-icon>
+              <h3>{{ benefit.title }}</h3>
+              <p>{{ benefit.text }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section id="modulos" class="psy-section">
+        <div class="psy-section__inner split">
+          <div>
+            <p class="psy-eyebrow">Módulos</p>
+            <h2 class="section-title">Simulación, bitácora, trazabilidad, rúbricas y reportes.</h2>
+          </div>
+          <p class="section-copy">
+            SIEP integra los componentes necesarios para practicar decisiones en casos simulados, documentar el
+            proceso reflexivo y facilitar la evaluación docente con evidencia trazable.
+          </p>
+        </div>
+        <div class="psy-section__inner psy-grid psy-grid--3 card-row">
+          @for (module of modules; track module.title) {
+            <article class="psy-card liquid-tilt">
+              <span class="psy-chip">{{ module.tag }}</span>
+              <mat-icon>{{ module.icon }}</mat-icon>
+              <h3>{{ module.title }}</h3>
+              <p>{{ module.text }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section id="roles" class="psy-section soft-band">
+        <div class="psy-section__inner split">
+          <div>
+            <p class="psy-eyebrow">Roles</p>
+            <h2 class="section-title">Estudiante, profesor y administrador.</h2>
+          </div>
+          <p class="section-copy">
+            Cada perfil accede a funcionalidades acordes con su responsabilidad formativa, de supervisión o de
+            gestión institucional del sistema.
+          </p>
+        </div>
+        <div class="psy-section__inner psy-grid psy-grid--3 card-row">
+          @for (role of roles; track role.title) {
+            <article class="siep-card role-card">
+              <mat-icon>{{ role.icon }}</mat-icon>
+              <h3>{{ role.title }}</h3>
+              <p>{{ role.text }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section id="etica" class="psy-section">
+        <div class="psy-section__inner support-layout">
+          <div>
+            <p class="psy-eyebrow">Compromiso ético</p>
+            <h2 class="section-title">Casos sensibles, salida segura y evaluación formativa.</h2>
+            <p class="section-copy">
+              SIEP prioriza la reflexión ética, el lenguaje no estigmatizante y rutas de atención institucionales
+              cuando el contenido simulado lo requiera.
+            </p>
+          </div>
+          <div class="support-panel liquid-glass">
+            @for (item of ethicsItems; track item) {
+              <div class="support-item">
+                <mat-icon>verified_user</mat-icon>
+                <span>{{ item }}</span>
+              </div>
+            }
+          </div>
+        </div>
       </section>
 
       <section id="programa" class="psy-section">
@@ -168,7 +245,7 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
           </div>
           <p class="section-copy">
             La Humboldt conecta dirección de investigaciones, semilleros, grupos y líneas de investigación con
-            prácticas formativas del programa. PsychoSim toma esa vocación y la convierte en simulación evaluable.
+            prácticas formativas del programa. SIEP extiende esa vocación mediante simulación evaluable y trazabilidad académica.
           </p>
         </div>
         <div class="psy-section__inner psy-grid psy-grid--4 card-row">
@@ -227,10 +304,10 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
         <div class="psy-section__inner contact-card liquid-glass">
           <div>
             <p class="psy-eyebrow">Contacto institucional</p>
-            <h2 class="section-title">PsychoSim queda alineado con Psicología Humboldt.</h2>
+            <h2 class="section-title">{{ brand.formalName }}</h2>
             <p class="section-copy">
-              Usa este portal para simulación, seguimiento formativo, rúbricas, bitácoras y analíticas académicas.
-              Para información oficial del programa, consulta los canales de la universidad.
+              Plataforma académica del {{ brand.program }} de la {{ brand.institution }}.
+              Para simulación formativa, seguimiento docente, bitácoras reflexivas y evaluación con rúbricas.
             </p>
           </div>
           <div class="contact-actions">
@@ -290,22 +367,20 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
     .nav-toggle { display: none; }
     .hero {
       position: relative;
-      min-height: 94vh;
+      min-height: 92vh;
       display: grid;
-      align-items: end;
-      padding: calc(var(--psy-header-h) + 56px) clamp(18px, 5vw, 70px) 118px;
+      align-items: center;
+      padding: calc(var(--psy-header-h) + 56px) clamp(18px, 5vw, 70px) 80px;
       overflow: hidden;
       background:
-        linear-gradient(90deg, rgba(244,247,250,.96) 0%, rgba(244,247,250,.82) 38%, rgba(234,241,244,.32) 100%),
-        linear-gradient(180deg, rgba(47,95,143,.08), rgba(79,163,165,.16)),
+        linear-gradient(90deg, rgba(242,242,242,.97) 0%, rgba(242,242,242,.88) 42%, rgba(232,238,243,.55) 100%),
+        linear-gradient(180deg, rgba(0,72,118,.06), rgba(11,90,138,.1)),
         url('/assets/images/institution/psychology-program-hero.png') center/cover no-repeat;
     }
     .hero-overlay {
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 16% 30%, rgba(169,155,214,.22), transparent 30%),
-        radial-gradient(circle at 78% 62%, rgba(140,191,166,.2), transparent 32%);
+      background: linear-gradient(90deg, rgba(242,242,242,.18), rgba(255,255,255,.08));
       pointer-events: none;
     }
     .hero-content {
@@ -314,6 +389,19 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
       width: min(820px, 100%);
     }
     .hero .psy-title { max-width: 760px; }
+    .hero-fullname {
+      margin: 10px 0 0;
+      color: var(--siep-blue-soft);
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      font-weight: 700;
+    }
+    .hero-description {
+      max-width: 720px;
+      margin: 16px 0 0;
+      color: var(--siep-muted);
+      font-size: 1rem;
+      line-height: 1.68;
+    }
     .hero-badges {
       display: flex;
       flex-wrap: wrap;
@@ -374,10 +462,12 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
     }
     .section-title {
       margin: 0;
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(2rem, 4vw, 3.4rem);
-      line-height: 1.02;
+      font-family: 'Poppins', system-ui, sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.85rem, 4vw, 3rem);
+      line-height: 1.08;
       letter-spacing: 0;
+      color: var(--siep-blue);
     }
     .section-copy {
       margin: 0;
@@ -396,7 +486,7 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
     }
     .official-strip h3 {
       margin: 12px 0 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
       font-size: clamp(1.45rem, 3vw, 2rem);
       line-height: 1.05;
     }
@@ -406,6 +496,13 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
       object-fit: contain;
     }
     .card-row { margin-top: 26px; }
+    .role-card mat-icon,
+    .siep-card mat-icon {
+      color: var(--siep-blue);
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
     .psy-card mat-icon {
       margin-top: 18px;
       color: var(--psy-teal-deep);
@@ -491,7 +588,7 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
       justify-content: space-between;
     }
     .editorial-card h3 {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
       font-size: 1.72rem;
       line-height: 1.05;
     }
@@ -586,9 +683,54 @@ const CIP_URL = 'https://unihumboldt.edu.co/es/centro-integral-de-psicologia';
   `]
 })
 export class LandingComponent {
+  readonly brand = APP_BRAND;
   readonly menuOpen = signal(false);
   readonly psychologyProgramUrl = PSYCHOLOGY_PROGRAM_URL;
   readonly cipUrl = CIP_URL;
+
+  readonly benefits: SectionCard[] = [
+    {
+      icon: 'psychology',
+      title: 'Práctica deliberada',
+      text: 'Entrenamiento psicosocial mediante casos simulados con decisiones trazables y retroalimentación formativa.',
+      tag: ''
+    },
+    {
+      icon: 'menu_book',
+      title: 'Bitácoras reflexivas',
+      text: 'Registro estructurado del proceso de reflexión ética y analítica durante cada intento.',
+      tag: ''
+    },
+    {
+      icon: 'fact_check',
+      title: 'Evaluación docente',
+      text: 'Rúbricas académicas e informes formativos para el seguimiento del desempeño estudiantil.',
+      tag: ''
+    }
+  ];
+
+  readonly modules: SectionCard[] = [
+    { icon: 'play_circle', title: 'Simulación', text: 'Casos psicosociales con rutas de decisión y retroalimentación formativa.', tag: 'Módulo' },
+    { icon: 'edit_note', title: 'Bitácora', text: 'Documentación reflexiva del proceso de toma de decisiones.', tag: 'Módulo' },
+    { icon: 'timeline', title: 'Trazabilidad', text: 'Registro docente de eventos, decisiones y métricas del intento.', tag: 'Módulo' },
+    { icon: 'grading', title: 'Rúbricas', text: 'Evaluación formativa con criterios académicos definidos.', tag: 'Módulo' },
+    { icon: 'analytics', title: 'Reportes', text: 'Indicadores de seguimiento para cohortes y desempeño general.', tag: 'Módulo' },
+    { icon: 'shield', title: 'Salida segura', text: 'Rutas de atención y recursos cuando el contenido simulado lo requiera.', tag: 'Módulo' }
+  ];
+
+  readonly roles: SectionCard[] = [
+    { icon: 'school', title: 'Estudiante', text: 'Practica decisiones en casos simulados, completa bitácoras y recibe retroalimentación formativa.', tag: '' },
+    { icon: 'supervisor_account', title: 'Profesor', text: 'Supervisa trazabilidad, evalúa con rúbricas y acompaña el proceso formativo.', tag: '' },
+    { icon: 'admin_panel_settings', title: 'Administrador', text: 'Gestiona usuarios, casos, publicaciones y configuración académica del sistema.', tag: '' }
+  ];
+
+  readonly ethicsItems = [
+    'Manejo responsable de casos sensibles con salida segura.',
+    'Evaluación formativa, sin decisiones automatizadas.',
+    'Confidencialidad y trazabilidad ética de bitácoras.',
+    'Lenguaje claro, humano y centrado en derechos.',
+    'Rutas de atención institucionales disponibles.'
+  ];
 
   readonly metrics: Stat[] = [
     { value: '101645', label: 'Código SNIES' },

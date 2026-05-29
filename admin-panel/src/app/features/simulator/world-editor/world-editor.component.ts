@@ -376,7 +376,8 @@ const OBJECT_COLORS: Record<string, string> = {
     }
     .we-inspector h4 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       font-size: 1.05rem;
       color: var(--psy-ink);
     }

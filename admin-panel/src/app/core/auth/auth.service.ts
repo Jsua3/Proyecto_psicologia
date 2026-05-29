@@ -1,13 +1,22 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { User, LoginResponse } from '../models/user.model';
 
 interface ApiResponse<T> {
   success: boolean;
   message: string | null;
   data: T;
+}
+
+interface UserSummary {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  role: User['role'];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +34,22 @@ export class AuthService {
         localStorage.setItem(this.TOKEN_KEY, res.data.token);
         this.currentUser.set(res.data.user);
       }));
+  }
+
+  syncCurrentUser(): Observable<User | null> {
+    if (!this.getToken()) {
+      this.currentUser.set(null);
+      return of(null);
+    }
+
+    return this.http.get<ApiResponse<UserSummary>>(`${this.API}/me`).pipe(
+      tap(res => this.currentUser.set(this.toUser(res.data))),
+      map(() => this.currentUser()),
+      catchError(() => {
+        this.logout();
+        return of(null);
+      })
+    );
   }
 
   logout() {
@@ -51,9 +76,25 @@ export class AuthService {
     if (!token) return null;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return { id: payload.userId, email: payload.sub, role: payload.role, nombre: '', apellido: '' };
+      return {
+        id: payload.userId,
+        email: payload.sub,
+        role: payload.role,
+        nombre: '',
+        apellido: ''
+      };
     } catch {
       return null;
     }
+  }
+
+  private toUser(summary: UserSummary): User {
+    return {
+      id: summary.id,
+      nombre: summary.nombre,
+      apellido: summary.apellido,
+      email: summary.email,
+      role: summary.role
+    };
   }
 }

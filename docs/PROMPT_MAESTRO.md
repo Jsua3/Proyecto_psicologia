@@ -1,8 +1,10 @@
-# Prompt Maestro PsychoSim
+# Prompt Maestro SIEP
 
 ## Proposito
 
-Este documento consolida la direccion funcional, visual y tecnica de PsychoSim: una plataforma web institucional para la Facultad de Psicologia de `[NOMBRE_UNIVERSIDAD]`, orientada a simulacion gamificada, aprendizaje etico, seguimiento docente y mejora continua.
+Este documento consolida la direccion funcional, visual y tecnica de **SIEP — Sistema de Entrenamiento Psicosocial**: plataforma web academica para la Corporacion Universitaria Empresarial Alexander Von Humboldt, orientada a simulacion formativa, aprendizaje etico, seguimiento docente y mejora continua.
+
+> **Nota:** el repositorio conserva identificadores tecnicos historicos (`psychosim`, paquetes `com.psychosim`) por compatibilidad. La marca visible del producto es **SIEP**.
 
 El documento funciona como contrato vivo del proyecto. Toda transformacion importante del frontend, backend, base de datos, seguridad, accesibilidad o experiencia de usuario debe quedar registrada aqui.
 
@@ -18,7 +20,7 @@ El documento funciona como contrato vivo del proyecto. Toda transformacion impor
 
 ## Vision Producto
 
-PsychoSim debe dejar de ser principalmente una aplicacion de escritorio y convertirse en una plataforma web academica completa:
+SIEP debe operar como plataforma web academica completa:
 
 - Sitio publico de Facultad de Psicologia, moderno, humano, sereno, cientifico e institucional.
 - Portal autenticado para estudiantes, docentes y administradores.

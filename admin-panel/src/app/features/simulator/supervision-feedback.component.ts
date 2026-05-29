@@ -46,7 +46,7 @@ import { SimulationFeedback } from '../../core/models/simulation.model';
       background: rgba(79,124,172,.12);
       color: var(--psy-blue-deep);
     }
-    h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
     p { margin: 6px 0 0; color: var(--psy-muted); line-height: 1.55; }
     .supervision-panel--danger { border-color: rgba(168,80,98,.32); background: rgba(255,247,248,.76); }
     .prohibition { color: #8b3145 !important; font-weight: 800; }

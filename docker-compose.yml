@@ -22,6 +22,7 @@ services:
       dockerfile: docker/backend.Dockerfile
     container_name: psychosim-backend
     environment:
+      SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/psychosim
       SPRING_DATASOURCE_USERNAME: psychosim
       SPRING_DATASOURCE_PASSWORD: psychosim_secret

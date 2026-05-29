@@ -16,15 +16,15 @@ export interface MinimapStage {
         @for (stage of stages(); track stage.key; let i = $index) {
           <div
             class="node"
-            [class.node--done]="isDone(i)"
+            [class.node--done]="isDone(stage, i)"
             [class.node--current]="stage.key === currentNodeKey()"
-            [attr.aria-label]="stage.label + (stage.key === currentNodeKey() ? ' (actual)' : isDone(i) ? ' (completado)' : ' (pendiente)')"
+            [attr.aria-label]="stage.label + (stage.key === currentNodeKey() ? ' (actual)' : isDone(stage, i) ? ' (completado)' : ' (pendiente)')"
             [attr.aria-current]="stage.key === currentNodeKey() ? 'step' : null">
             <span class="node-dot" aria-hidden="true"></span>
             <span class="node-label">{{ stage.label }}</span>
           </div>
           @if (i < stages().length - 1) {
-            <div class="node-connector" [class.connector--done]="isDone(i + 1)" aria-hidden="true"></div>
+            <div class="node-connector" [class.connector--done]="isDone(stages()[i + 1], i + 1)" aria-hidden="true"></div>
           }
         }
       </div>
@@ -112,6 +112,7 @@ export interface MinimapStage {
 export class MinimapComponent {
   readonly stages = input<MinimapStage[]>([]);
   readonly currentNodeKey = input('');
+  readonly visitedNodeKeys = input<string[]>([]);
 
   readonly currentIndex = computed(() => {
     const idx = this.stages().findIndex(s => s.key === this.currentNodeKey());
@@ -122,7 +123,11 @@ export class MinimapComponent {
     this.stages()[this.currentIndex()]?.label ?? ''
   );
 
-  isDone(index: number): boolean {
+  isDone(stage: MinimapStage, index: number): boolean {
+    const visited = this.visitedNodeKeys();
+    if (visited.length) {
+      return visited.includes(stage.key) && stage.key !== this.currentNodeKey();
+    }
     return index < this.currentIndex();
   }
 }

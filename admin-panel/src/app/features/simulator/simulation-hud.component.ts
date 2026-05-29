@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { SimulationAttemptState } from '../../core/models/simulation.model';
+import { HOSPITAL_NODE_KEY, HOSPITAL_SCENE_OBJECTIVE } from './hospital-map.config';
 
 type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
 
@@ -15,8 +16,9 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
         [class.hud--stress-high]="stressTier() === 'high'"
         [class.hud--stress-critical]="stressTier() === 'critical'">
 
-        <div class="hud-score" aria-label="Puntaje profesional: {{ game.accumulatedScore }}">
-          <mat-icon aria-hidden="true">star</mat-icon>
+        <div class="hud-score" aria-label="Seguimiento formativo: {{ game.accumulatedScore }} puntos">
+          <span class="hud-label">Seguimiento formativo</span>
+          <mat-icon aria-hidden="true">fact_check</mat-icon>
           <strong>{{ game.accumulatedScore }}</strong>
         </div>
 
@@ -26,7 +28,8 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
           [attr.aria-valuenow]="game.stressIndex"
           aria-valuemin="0"
           aria-valuemax="100"
-          [attr.aria-label]="'Estrés: ' + game.stressIndex + '%. ' + stressLabel()">
+          [attr.aria-label]="'Estado de estrés del caso: ' + game.stressIndex + '%. ' + stressLabel()">
+          <span class="hud-label">Estado del caso</span>
           <span class="stress-pct" [style.color]="stressColor()">{{ game.stressIndex }}%</span>
           <div class="stress-track" aria-hidden="true">
             <span [style.width.%]="game.stressIndex" [style.background]="stressMeterGradient()"></span>
@@ -37,6 +40,13 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
           <mat-icon aria-hidden="true">location_on</mat-icon>
           <span>{{ game.currentNode.title }}</span>
         </div>
+
+        @if (sceneObjective(); as objective) {
+          <div class="hud-objective" role="status" aria-label="Objetivo actual: {{ objective }}">
+            <mat-icon aria-hidden="true">flag</mat-icon>
+            <span><strong>Objetivo:</strong> {{ objective }}</span>
+          </div>
+        }
 
         <div class="hud-status" [class.hud-status--live]="game.status === 'IN_PROGRESS'">
           <span class="status-dot" aria-hidden="true"></span>
@@ -69,7 +79,14 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
       gap: 5px;
       flex-shrink: 0;
     }
-    .hud-score mat-icon { color: #f4c875; font-size: 18px; width: 18px; height: 18px; }
+    .hud-label {
+      color: rgba(232,240,244,.52);
+      font-size: .64rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .hud-score mat-icon { color: var(--siep-blue-soft); font-size: 18px; width: 18px; height: 18px; }
     .hud-score strong {
       font-family: 'JetBrains Mono', monospace;
       font-size: .9rem;
@@ -80,7 +97,7 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
       display: flex;
       align-items: center;
       gap: 8px;
-      flex: 0 0 160px;
+      flex: 0 0 260px;
     }
     .hud-stress--pulse { animation: stress-pulse .6s ease-out; }
     .stress-pct {
@@ -110,13 +127,44 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
       flex: 1;
       overflow: hidden;
     }
-    .hud-scene mat-icon { color: #4fa3a5; font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; }
+    .hud-scene mat-icon { color: var(--siep-blue-soft); font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; }
     .hud-scene span {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: .8rem;
       color: rgba(232,240,244,.65);
+    }
+
+    .hud-objective {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex: 1.2;
+      min-width: 0;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(79,163,165,.08);
+      border: 1px solid rgba(79,163,165,.18);
+    }
+    .hud-objective mat-icon {
+      color: var(--siep-blue-soft);
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    .hud-objective span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: .72rem;
+      color: rgba(232,240,244,.78);
+    }
+    .hud-objective strong {
+      color: rgba(157,192,232,.9);
+      font-weight: 800;
+      margin-right: 4px;
     }
 
     .hud-status {
@@ -135,7 +183,7 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
       background: rgba(255,255,255,.25);
     }
     .hud-status--live .status-dot {
-      background: #4fa3a5;
+      background: var(--siep-blue-soft);
       animation: dot-blink 2s ease-in-out infinite;
     }
 
@@ -151,6 +199,8 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
 
     @media (max-width: 640px) {
       .hud-scene { display: none; }
+      .hud-objective span { white-space: normal; line-height: 1.25; }
+      .hud-label { display: none; }
       .hud-stress { flex: 0 0 120px; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -193,7 +243,13 @@ export class SimulationHudComponent {
     critical: 'Nivel crítico — priorice seguridad y autocuidado'
   })[this.stressTier()]);
 
+  readonly sceneObjective = computed(() => {
+    const nodeKey = this.attempt()?.currentNode.key;
+    if (nodeKey === HOSPITAL_NODE_KEY) return HOSPITAL_SCENE_OBJECTIVE;
+    return null;
+  });
+
   statusLabel(status: SimulationAttemptState['status']) {
-    return { IN_PROGRESS: 'En escena', COMPLETED: 'Finalizado', SAFE_EXITED: 'Pausado' }[status];
+    return { IN_PROGRESS: 'En seguimiento', COMPLETED: 'Finalizado', SAFE_EXITED: 'Salida segura' }[status];
   }
 }

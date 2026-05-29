@@ -85,7 +85,7 @@ const PAD = 56;
                   [attr.stroke-dasharray]="le.edge.prohibitedConduct ? '6,4' : null"
                   [attr.marker-end]="markerFor(le.edge)" />
                 <text [attr.x]="le.mx" [attr.y]="le.my - 6" class="edge-label" text-anchor="middle">
-                  {{ le.edge.text | slice:0:24 }}{{ (le.edge.text?.length ?? 0) > 24 ? '…' : '' }}
+                  {{ le.edge.text | slice:0:24 }}{{ le.edge.text.length > 24 ? '…' : '' }}
                 </text>
                 <text [attr.x]="le.mx" [attr.y]="le.my + 10" class="edge-score" text-anchor="middle">
                   {{ le.edge.scoreDelta >= 0 ? '+' : '' }}{{ le.edge.scoreDelta }}pts · {{ le.edge.stressDelta >= 0 ? '+' : '' }}{{ le.edge.stressDelta }}%
@@ -113,7 +113,7 @@ const PAD = 56;
                   class="dag-node-rect" />
                 <text x="84" y="24" class="dag-node-key" text-anchor="middle">{{ ln.node.key }}</text>
                 <text x="84" y="44" class="dag-node-title" text-anchor="middle">
-                  {{ ln.node.title | slice:0:20 }}{{ (ln.node.title?.length ?? 0) > 20 ? '…' : '' }}
+                  {{ ln.node.title | slice:0:20 }}{{ ln.node.title.length > 20 ? '…' : '' }}
                 </text>
                 <text x="84" y="62" class="dag-node-badge" text-anchor="middle">
                   {{ ln.node.terminal ? '■ Terminal' : ln.node.startNode ? '▶ Inicio' : '● Nodo' }}
@@ -142,7 +142,7 @@ const PAD = 56;
             </div>
           </div>
           <p class="dag-narrative">{{ node.narrative }}</p>
-          @if (node.requiredTools?.length) {
+          @if (node.requiredTools.length) {
             <p class="dag-meta"><mat-icon>build</mat-icon> Herramientas: {{ node.requiredTools.join(', ') }}</p>
           }
           @if (node.sensitiveContent) {
@@ -325,7 +325,8 @@ const PAD = 56;
     }
     .dag-detail-head h3 {
       margin: 6px 0 4px;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
     }
     .dag-detail-head code {
       font-family: 'JetBrains Mono', monospace;

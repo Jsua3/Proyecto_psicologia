@@ -146,7 +146,7 @@ interface EphemeralScore {
             <!-- Tools -->
             <app-tool-inventory
               [tools]="toolStates()"
-              [inventory]="ephemeral()?.toolsUsed ?? []"
+              [inventory]="ephemeral().toolsUsed"
               (select)="selectTool($event)" />
 
             <!-- Accessible interaction list -->
@@ -161,7 +161,7 @@ interface EphemeralScore {
                     type="button"
                     class="interaction-card psy-liquid-ripple"
                     [class.interaction-card--selected]="selectedInteraction()?.key === obj.key"
-                    [class.interaction-card--inspected]="ephemeral()?.inspectedKeys?.includes(obj.key)"
+                    [class.interaction-card--inspected]="ephemeral().inspectedKeys.includes(obj.key)"
                     (click)="openInteraction(obj)">
                     <span class="interaction-dot" [style.background]="obj.color">{{ obj.shortCode }}</span>
                     <span>
@@ -304,7 +304,7 @@ interface EphemeralScore {
       padding: 18px;
       border-radius: 22px;
     }
-    .panel-title h3 { margin: 0; font-family: 'Cormorant Garamond', serif; }
+    .panel-title h3 { margin: 0; font-family: 'Poppins', system-ui, sans-serif; letter-spacing: 0; }
     .interaction-list {
       display: grid;
       gap: 10px;
@@ -378,7 +378,8 @@ interface EphemeralScore {
     }
     .preview-empty h3 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
+      letter-spacing: 0;
       color: var(--psy-ink);
     }
     .preview-empty p {

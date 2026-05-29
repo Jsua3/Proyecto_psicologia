@@ -22,8 +22,8 @@ import { CasoRequest } from '../../core/models/caso.model';
   ],
   template: `
     <div class="page-header">
-      <h1 class="page-title">{{ esEdicion ? 'Editar' : 'Nuevo' }} Caso Clínico</h1>
-      <a mat-stroked-button routerLink="/casos">Volver</a>
+      <h1 class="page-title">{{ esEdicion ? 'Editar' : 'Nuevo' }} caso psicosocial</h1>
+      <a class="psy-button psy-button--ghost" routerLink="/casos">Volver</a>
     </div>
 
     <mat-stepper [linear]="true" #stepper>
@@ -44,7 +44,7 @@ import { CasoRequest } from '../../core/models/caso.model';
             <textarea matInput formControlName="contextoNarrativo" rows="6"></textarea>
           </mat-form-field>
           <div class="step-actions">
-            <button mat-flat-button color="primary" matStepperNext [disabled]="paso1.invalid">Siguiente</button>
+            <button class="psy-button psy-button--primary" matStepperNext [disabled]="paso1.invalid">Siguiente</button>
           </div>
         </form>
       </mat-step>
@@ -77,8 +77,8 @@ import { CasoRequest } from '../../core/models/caso.model';
             <mat-icon>add</mat-icon> Agregar escenario
           </button>
           <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>Atrás</button>
-            <button mat-flat-button color="primary" matStepperNext>Siguiente</button>
+            <button class="psy-button psy-button--ghost" matStepperPrevious>Atrás</button>
+            <button class="psy-button psy-button--primary" matStepperNext>Siguiente</button>
           </div>
         </div>
       </mat-step>
@@ -129,8 +129,8 @@ import { CasoRequest } from '../../core/models/caso.model';
           </div>
 
           <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>Atrás</button>
-            <button mat-flat-button color="primary" (click)="guardar()" [disabled]="saving()">
+            <button class="psy-button psy-button--ghost" matStepperPrevious>Atrás</button>
+            <button class="psy-button psy-button--primary" (click)="guardar()" [disabled]="saving()">
               {{ saving() ? 'Guardando...' : (esEdicion ? 'Actualizar' : 'Crear caso') }}
             </button>
           </div>
@@ -139,14 +139,18 @@ import { CasoRequest } from '../../core/models/caso.model';
     </mat-stepper>
   `,
   styles: [`
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-title { font-size: 24px; font-weight: 700; color: #1A2B3C; margin: 0; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .page-title { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800; color: var(--siep-blue); margin: 0; letter-spacing: 0; }
     .step-form { padding: 16px 0; }
     .full-width { width: 100%; }
     .step-actions { display: flex; gap: 12px; margin-top: 24px; }
-    .escenario-block, .escenario-section { border: 1px solid #e0e6ed; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .pregunta-block { border-left: 3px solid #7A9EC0; padding-left: 16px; margin: 12px 0; }
-    .opcion-block { background: #f8f9fa; border-radius: 6px; padding: 12px; margin: 8px 0; }
+    .escenario-block, .escenario-section { border: 1px solid var(--siep-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: var(--siep-surface); }
+    .pregunta-block { border-left: 3px solid var(--siep-blue-soft); padding-left: 16px; margin: 12px 0; }
+    .opcion-block { background: var(--siep-bg); border-radius: 8px; padding: 12px; margin: 8px 0; }
+    @media (max-width: 560px) {
+      .page-header, .step-actions { display: grid; }
+      .page-header .psy-button, .step-actions .psy-button { width: 100%; }
+    }
   `]
 })
 export class CasoFormComponent implements OnInit {

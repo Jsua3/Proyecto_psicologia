@@ -79,6 +79,7 @@ public class SimulationWorldService {
     @Transactional
     public WorldState updatePosition(UUID attemptId, String attemptToken, int playerX, int playerY, User actor) {
         SimulationAttemptEntity attempt = requireAttempt(attemptId, attemptToken, actor);
+        requireInProgress(attempt);
         AttemptWorldStateEntity worldState = requireWorldState(attempt);
         worldState.setPlayerX(clamp(playerX, 0, 960));
         worldState.setPlayerY(clamp(playerY, 0, 540));
@@ -91,6 +92,7 @@ public class SimulationWorldService {
     @Transactional
     public InteractionResult openInteraction(UUID attemptId, String attemptToken, String interactionKey, User actor) {
         SimulationAttemptEntity attempt = requireAttempt(attemptId, attemptToken, actor);
+        requireInProgress(attempt);
         AttemptWorldStateEntity worldState = requireWorldState(attempt);
         MapObjectEntity mapObject = mapObjectRepository
                 .findBySceneMapIdAndObjectKey(worldState.getSceneMap().getId(), interactionKey)
@@ -253,6 +255,12 @@ public class SimulationWorldService {
             throw new AccessDeniedException("No tiene acceso a este intento");
         }
         return attempt;
+    }
+
+    private void requireInProgress(SimulationAttemptEntity attempt) {
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("El intento ya no acepta interacciones en el mundo");
+        }
     }
 
     private WorldState toWorldState(SimulationAttemptEntity attempt, AttemptWorldStateEntity state) {

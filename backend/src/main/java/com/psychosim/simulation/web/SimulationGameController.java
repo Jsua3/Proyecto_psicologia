@@ -54,7 +54,22 @@ public class SimulationGameController {
             @Valid @RequestBody StartAttemptRequest request,
             @AuthenticationPrincipal User user
     ) {
-        return ResponseEntity.ok(ApiResponse.ok("Intento iniciado", simulationGameService.startAttempt(request.caseVersionId(), user)));
+        return ResponseEntity.ok(ApiResponse.ok("Intento iniciado", simulationGameService.startAttempt(
+                request.caseVersionId(),
+                user,
+                Boolean.TRUE.equals(request.forceNew())
+        )));
+    }
+
+    @GetMapping("/cases/{caseVersionId}/active-attempt")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','ADMIN')")
+    public ResponseEntity<ApiResponse<AttemptState>> activeAttempt(
+            @PathVariable Long caseVersionId,
+            @AuthenticationPrincipal User user
+    ) {
+        return simulationGameService.findActiveAttempt(caseVersionId, user)
+                .map(state -> ResponseEntity.ok(ApiResponse.ok(state)))
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/attempts/{attemptId}")
@@ -65,6 +80,26 @@ public class SimulationGameController {
             @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.ok(ApiResponse.ok(simulationGameService.getAttempt(attemptId, attemptToken, user)));
+    }
+
+    @GetMapping("/attempts/{attemptId}/completion-report")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','PROFESOR','ADMIN')")
+    public ResponseEntity<ApiResponse<SimulationDtos.AttemptCompletionReport>> completionReport(
+            @PathVariable UUID attemptId,
+            @RequestParam String attemptToken,
+            @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(simulationGameService.getCompletionReport(attemptId, attemptToken, user)));
+    }
+
+    @GetMapping("/attempts/{attemptId}/progress-map")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','PROFESOR','ADMIN')")
+    public ResponseEntity<ApiResponse<SimulationDtos.ProgressMapState>> progressMap(
+            @PathVariable UUID attemptId,
+            @RequestParam String attemptToken,
+            @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(simulationGameService.getProgressMap(attemptId, attemptToken, user)));
     }
 
     @PostMapping("/attempts/{attemptId}/decisions")

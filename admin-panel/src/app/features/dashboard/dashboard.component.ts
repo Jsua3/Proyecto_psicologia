@@ -5,6 +5,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { ReporteService } from '../../core/api/reporte.service';
+import { APP_BRAND } from '../../core/config/brand.config';
 import { Dashboard } from '../../core/models/sesion.model';
 
 @Component({
@@ -15,9 +16,9 @@ import { Dashboard } from '../../core/models/sesion.model';
     <section class="dashboard-page psy-reveal">
       <div class="dashboard-heading">
         <div>
-          <p class="psy-eyebrow">Analíticas formativas</p>
-          <h2>Dashboard</h2>
-          <p>Seguimiento académico de intentos, casos completados y desempeño general.</p>
+          <p class="psy-eyebrow">Seguimiento formativo</p>
+          <h2>Bienvenido a {{ brand.shortName }}</h2>
+          <p>{{ brand.fullName }}. Trazabilidad de decisiones, simulaciones activas y evaluación por rúbricas.</p>
         </div>
         @if (error()) {
           <div class="status-pill">
@@ -27,7 +28,7 @@ import { Dashboard } from '../../core/models/sesion.model';
         } @else {
           <a class="psy-button psy-button--primary" routerLink="/portal/simulador">
             <mat-icon>play_circle</mat-icon>
-            Abrir simulador
+            Simulaciones activas
           </a>
         }
       </div>
@@ -139,9 +140,10 @@ import { Dashboard } from '../../core/models/sesion.model';
     }
     .dashboard-heading h2 {
       margin: 0;
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Poppins', system-ui, sans-serif;
       font-size: clamp(2.2rem, 4vw, 3.4rem);
       line-height: 1;
+      letter-spacing: 0;
     }
     .dashboard-heading p:not(.psy-eyebrow) {
       max-width: 680px;
@@ -304,6 +306,7 @@ import { Dashboard } from '../../core/models/sesion.model';
   `]
 })
 export class DashboardComponent implements OnInit {
+  readonly brand = APP_BRAND;
   private readonly reporteService = inject(ReporteService);
 
   readonly dashboard = signal<Dashboard | null>(null);
@@ -327,13 +330,27 @@ export class DashboardComponent implements OnInit {
   metrics() {
     const data = this.dashboard();
     return [
-      { icon: 'groups', value: data ? String(data.estudiantesActivos) : '0', label: 'Sesiones completadas hoy' },
-      { icon: 'task_alt', value: data ? String(data.casosCompletadosHoy) : '0', label: 'Casos completados hoy' },
-      { icon: 'monitoring', value: data ? Math.round(data.puntajePromedioGlobal).toString() : '0', label: 'Puntaje promedio global' }
+      { icon: 'task_alt', value: data ? String(data.simulacionesCompletadas ?? data.casosCompletadosHoy) : '0', label: 'Simulaciones completadas' },
+      { icon: 'monitoring', value: data ? Math.round(data.puntajePromedioSimulacion || data.puntajePromedioGlobal).toString() : '0', label: 'Puntaje promedio simulación' },
+      { icon: 'psychology', value: data ? String(data.decisionesAdecuadas ?? 0) : '0', label: 'Decisiones adecuadas registradas' }
     ];
   }
 
   rows() {
-    return this.dashboard()?.ultimasSesiones ?? [];
+    const data = this.dashboard();
+    if (data?.intentosRecientes?.length) {
+      return data.intentosRecientes.map(item => ({
+        casoTitulo: item.casoTitulo,
+        estudiante: item.estudiante,
+        puntaje: item.puntaje,
+        completado: item.estado === 'COMPLETADO' || item.estado === 'SAFE_EXITED'
+      }));
+    }
+    return data?.ultimasSesiones?.map(s => ({
+      casoTitulo: s.casoTitulo,
+      estudiante: s.estudiante,
+      puntaje: s.puntaje,
+      completado: s.completado
+    })) ?? [];
   }
 }

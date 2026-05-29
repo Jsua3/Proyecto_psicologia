@@ -4,6 +4,15 @@ import { MatIconModule } from '@angular/material/icon';
 import Phaser from 'phaser';
 import { CollisionZoneState, MapObjectState, SimulationWorldState } from '../../core/models/simulation.model';
 import { KenneyCharFrames, KenneyDungeonFrames } from './kenney-frames.constants';
+import {
+  HOSPITAL_AMBIENT_ZONES,
+  HOSPITAL_COLLISIONS,
+  HOSPITAL_ZONES,
+  applyHospitalDisplayLabels,
+  buildAmbientObject,
+  getDisplayLabel,
+  isHospitalMap,
+} from './hospital-map.config';
 
 interface WorldCallbacks {
   onProximity: (obj: MapObjectState | null) => void;
@@ -216,18 +225,105 @@ class DataDrivenWorldScene extends Phaser.Scene {
     this.add.text(56, 46, this.world.map.title, {
       fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#9dc0e8', fontStyle: 'bold'
     }).setDepth(6);
+    if (isHospitalMap(mapKey)) {
+      this.add.text(56, 66, 'Hospital — Urgencia vital y crisis', {
+        fontFamily: 'Arial, sans-serif', fontSize: '11px', color: 'rgba(157,192,232,.72)',
+      }).setDepth(6);
+    }
+
+    if (isHospitalMap(mapKey)) {
+      this.renderHospitalEnvironment();
+    }
 
     // Merge Tiled object positions with backend objects.
     // Tiled object "name" must match the backend MapObjectState "key".
-    const mergedObjects = this.world.objects.map(obj => {
+    let mergedObjects = this.world.objects.map(obj => {
       const t = tiledObjects.find(o => o.name === obj.key);
       return (t?.x != null && t?.y != null) ? { ...obj, x: t.x, y: t.y } : obj;
     });
+    if (isHospitalMap(mapKey)) {
+      mergedObjects = applyHospitalDisplayLabels(mergedObjects);
+    }
 
     mergedObjects.forEach(obj => this.createMarker(obj));
     this.createPlayer(this.world.player.x, this.world.player.y);
     this.refreshMarkerStates();
     this.updateNearestInteraction();
+  }
+
+  private renderHospitalEnvironment() {
+    const g = this.add.graphics().setDepth(3.5);
+
+    HOSPITAL_ZONES.forEach(zone => {
+      const cx = zone.x + zone.width / 2;
+      const cy = zone.y + zone.height / 2;
+      this.add.rectangle(cx, cy, zone.width, zone.height, zone.tint, zone.alpha)
+        .setStrokeStyle(1, 0x4f7cac, 0.35)
+        .setDepth(3.5);
+      this.add.text(zone.x + 8, zone.y + 6, zone.label, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '10px',
+        color: '#9dc0e8',
+        fontStyle: 'bold',
+        backgroundColor: 'rgba(8,12,18,.78)',
+        padding: { x: 5, y: 3 },
+      }).setDepth(4);
+    });
+
+    // Internal partitions
+    g.lineStyle(2, 0x4f7cac, 0.45);
+    g.lineBetween(604, 44, 604, 324);
+    g.lineBetween(604, 360, 604, 496);
+    g.lineBetween(334, 280, 334, 496);
+    g.lineBetween(620, 44, 910, 44);
+    g.lineBetween(620, 200, 910, 200);
+    // Restricted-area barrier
+    g.lineStyle(2, 0xa85062, 0.65);
+    g.strokeRect(620, 48, 290, 160);
+
+    // Entrance signage
+    this.add.text(72, 392, 'URGENCIAS', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '13px',
+      color: '#e8f0f4',
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(168,80,98,.82)',
+      padding: { x: 8, y: 4 },
+    }).setDepth(6);
+
+    if (this.assetsLoaded && this.textures.exists('characters')) {
+      // Family NPCs near escucha-segura zone
+      this.add.sprite(150, 248, 'characters', KenneyCharFrames.NPC_PATIENT_IDLE)
+        .setScale(2).setDepth(8).setTint(0xffc8b0);
+      this.add.text(150, 276, 'Madre', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#e8c4b8',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+
+      this.add.sprite(230, 268, 'characters', KenneyCharFrames.NPC_PATIENT_IDLE)
+        .setScale(1.85).setDepth(8).setTint(0xb8d4ff);
+      this.add.text(230, 294, 'Hermano', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#b8d4ff',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+
+      // Security at entrance
+      this.add.sprite(110, 430, 'characters', KenneyCharFrames.NPC_SUPERVISOR_IDLE)
+        .setScale(2).setDepth(8);
+      this.add.text(110, 458, 'Seguridad', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#9dc0e8',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+    }
+
+    if (this.assetsLoaded && this.textures.exists('dungeon-tiles')) {
+      // Waiting-room chairs and reception desk
+      [[380, 340], [420, 340], [380, 380], [420, 380]].forEach(([x, y]) => {
+        this.add.image(x, y, 'dungeon-tiles', KenneyDungeonFrames.CHAIR).setScale(2).setDepth(7);
+      });
+      this.add.image(560, 160, 'dungeon-tiles', KenneyDungeonFrames.DESK).setScale(2.2).setDepth(7);
+      this.add.image(700, 100, 'dungeon-tiles', KenneyDungeonFrames.CABINET).setScale(2).setDepth(7);
+    }
   }
 
   private renderCollisionZone(zone: CollisionZoneState) {
@@ -265,7 +361,8 @@ class DataDrivenWorldScene extends Phaser.Scene {
   private createMarker(object: MapObjectState) {
     const isExit = object.type === 'EXIT';
     const color  = Number.parseInt(object.color.replace('#', ''), 16) || 0x4fa3a5;
-    const label  = this.add.text(0, 28, object.label, {
+    const displayLabel = getDisplayLabel(object);
+    const label  = this.add.text(0, 28, displayLabel, {
       fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#e8f0f4',
       backgroundColor: 'rgba(8,12,18,.72)', padding: { x:5, y:3 }, align: 'center', wordWrap: { width: 140 }
     }).setOrigin(.5, 0);
@@ -275,6 +372,8 @@ class DataDrivenWorldScene extends Phaser.Scene {
     if (this.assetsLoaded) {
       if (isExit && this.textures.exists('dungeon-tiles')) {
         main = this.add.image(0, 0, 'dungeon-tiles', KenneyDungeonFrames.DOOR).setScale(2.5);
+      } else if (object.type === 'PERSON' && this.textures.exists('characters')) {
+        main = this.add.sprite(0, 0, 'characters', KenneyCharFrames.NPC_PATIENT_IDLE).setScale(2);
       } else if (this.textures.exists('dungeon-tiles')) {
         main = this.add.image(0, 0, 'dungeon-tiles', this.frameForType(object.type)).setScale(2);
       } else {
@@ -332,19 +431,41 @@ class DataDrivenWorldScene extends Phaser.Scene {
 
   private collides(x: number, y: number): boolean {
     if (!this.world) return false;
-    const pb = new Phaser.Geom.Rectangle(x-15, y-27, 30, 46);
-    return this.world.collisions.some(z =>
+    const pb = new Phaser.Geom.Rectangle(x - 15, y - 27, 30, 46);
+    const zones = isHospitalMap(this.world.map.key)
+      ? HOSPITAL_COLLISIONS
+      : this.world.collisions.map(z => ({ x: z.x, y: z.y, width: z.width, height: z.height }));
+    return zones.some(z =>
       Phaser.Geom.Intersects.RectangleToRectangle(pb, new Phaser.Geom.Rectangle(z.x, z.y, z.width, z.height)));
   }
 
   private updateNearestInteraction() {
-    if (!this.player || !this.world?.objects.length) return;
+    if (!this.player || !this.world) return;
+
+    const objects = isHospitalMap(this.world.map.key)
+      ? applyHospitalDisplayLabels(this.world.objects)
+      : this.world.objects;
+
     let nearest: MapObjectState | null = null;
     let nearestD = Infinity;
-    for (const obj of this.world.objects) {
-      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, obj.x, obj.y);
-      if (d < nearestD) { nearest = obj; nearestD = d; }
+    for (const obj of objects) {
+      const marker = this.markers.get(obj.key);
+      const ox = marker?.x ?? obj.x;
+      const oy = marker?.y ?? obj.y;
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, ox, oy);
+      if (d < nearestD) { nearest = { ...obj, x: ox, y: oy }; nearestD = d; }
     }
+
+    if (isHospitalMap(this.world.map.key) && (!nearest || nearestD > 74)) {
+      for (const zone of HOSPITAL_AMBIENT_ZONES) {
+        const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, zone.x, zone.y);
+        if (d <= zone.radius && d < nearestD) {
+          nearest = buildAmbientObject(zone);
+          nearestD = d;
+        }
+      }
+    }
+
     const nextKey = nearest && nearestD <= 74 ? nearest.key : null;
     if (nextKey !== this.nearestKey) {
       this.nearestKey = nextKey;

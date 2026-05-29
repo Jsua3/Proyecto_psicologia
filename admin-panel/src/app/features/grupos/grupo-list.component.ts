@@ -37,7 +37,7 @@ import { GrupoService, Grupo } from '../../core/api/grupo.service';
               <mat-label>Código único</mat-label>
               <input matInput formControlName="codigo">
             </mat-form-field>
-            <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+            <button class="psy-button psy-button--primary" type="submit" [disabled]="form.invalid">
               Crear grupo
             </button>
           </form>
@@ -87,10 +87,10 @@ import { GrupoService, Grupo } from '../../core/api/grupo.service';
               <mat-label>Email del estudiante</mat-label>
               <input matInput formControlName="email" type="email">
             </mat-form-field>
-            <button mat-flat-button color="primary" type="submit" [disabled]="estudianteForm.invalid">
+            <button class="psy-button psy-button--primary" type="submit" [disabled]="estudianteForm.invalid">
               Agregar
             </button>
-            <button mat-stroked-button type="button" (click)="grupoSeleccionado.set(null)">
+            <button class="psy-button psy-button--ghost" type="button" (click)="grupoSeleccionado.set(null)">
               Cancelar
             </button>
           </form>
@@ -101,12 +101,16 @@ import { GrupoService, Grupo } from '../../core/api/grupo.service';
   `,
   styles: [`
     .page-header { display: flex; align-items: center; margin-bottom: 24px; }
-    .page-title { font-size: 24px; font-weight: 700; color: #1A2B3C; margin: 0; }
+    .page-title { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800; color: var(--siep-blue); margin: 0; letter-spacing: 0; }
     .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
     .full-width { width: 100%; }
     .agregar-estudiante { margin-top: 16px; }
     .agregar-estudiante form { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
-    .mensaje { color: #27AE60; font-size: 13px; }
+    .mensaje { color: var(--psy-green-deep); font-size: .88rem; font-weight: 700; }
+    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) {
+      form .psy-button, .agregar-estudiante .psy-button { width: 100%; }
+    }
   `]
 })
 export class GrupoListComponent implements OnInit {

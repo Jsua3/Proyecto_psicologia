@@ -1,4 +1,4 @@
-name: PsychoSim CI
+name: SIEP CI
 
 on:
   push:

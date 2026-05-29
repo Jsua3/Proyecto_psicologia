@@ -1,7 +1,8 @@
-# PsychoSim
+# SIEP — Sistema de Entrenamiento Psicosocial
 
-Plataforma web institucional para el Programa de Psicología de la Corporación Universitaria Empresarial Alexander Von Humboldt: simulación gamificada, evaluación formativa, bienestar, investigación y seguimiento docente.
+SIEP — Sistema de Entrenamiento Psicosocial es una plataforma web académica orientada a la formación de estudiantes de Psicología mediante simulaciones de casos psicosociales. El sistema permite practicar la toma de decisiones, registrar la trazabilidad del proceso, generar bitácoras reflexivas y facilitar la evaluación docente mediante rúbricas e informes formativos.
 
+Desarrollada para el Programa de Psicología de la Corporación Universitaria Empresarial Alexander Von Humboldt.
 ## Arquitectura
 
 | Componente | Tecnología |
@@ -14,7 +15,30 @@ Plataforma web institucional para el Programa de Psicología de la Corporación 
 
 ## Inicio Rápido
 
-### Con Docker Compose
+### Un solo comando (recomendado)
+
+Requisitos: Node.js 20+, Docker Desktop.
+
+```bash
+npm install
+npm run up
+```
+
+Esto levanta PostgreSQL y el backend en Docker, espera a que la API esté lista y arranca el frontend Angular en modo desarrollo.
+
+- Portal dev: http://localhost:4200
+- API backend: http://localhost:8090
+- Swagger UI: http://localhost:8090/swagger-ui.html
+
+Otros comandos útiles:
+
+```bash
+npm run up:docker   # stack completo en Docker (portal en http://localhost)
+npm run down        # detener contenedores
+npm run logs        # ver logs de db y backend
+```
+
+### Con Docker Compose (manual)
 
 ```bash
 docker compose up -d
@@ -34,10 +58,9 @@ docker compose up -d
 - Email docente demo: `profesora@psychosim.edu.co`
 - Password docente demo: `Profesor123!`
 
-## Simulador Jugable
+## Simulador formativo
 
-El portal incluye un primer flujo de juego serio en `Portal -> Simulador`. La experiencia esta disenada como una mision clinica explorable con Phaser, no como un examen de opciones ABCD:
-
+El portal incluye un flujo de entrenamiento psicosocial en `Portal -> Simulador`. La experiencia está diseñada como simulación formativa explorable con Phaser:
 - catálogo de casos publicados,
 - inicio de intento con token de juego,
 - escenas tipo grafo DAG,
@@ -54,26 +77,24 @@ El portal incluye un primer flujo de juego serio en `Portal -> Simulador`. La ex
 
 ## Desarrollo Local
 
-### Backend
+Usa `npm run up` desde la raíz del repo (ver arriba). No hace falta Maven instalado: el backend corre en Docker.
 
-El backend corre por defecto en `8080`, pero en este workspace se usa `8090` porque `8080` está ocupado por un proceso local `httpd`.
+Si prefieres el backend nativo con Maven:
 
 ```bash
+docker compose up -d db
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--server.port=8090
 ```
 
-### Admin Panel
+En otra terminal:
 
 ```bash
 cd admin-panel
-npm install
-ng serve
+npm start
 ```
 
-Frontend local: http://localhost:4200
-
-El proxy local apunta a `http://localhost:8090`.
+El proxy de Angular apunta a `http://localhost:8090`.
 
 ### Cliente JavaFX
 

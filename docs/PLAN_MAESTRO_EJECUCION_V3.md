@@ -2,7 +2,7 @@
 
 ### "Clinical-grade, Undertale-tier" · Documento-biblia autocontenido
 
-> **Propósito de este documento:** ser el plan rector ejecutable de la versión robusta de PsychoSim.
+> **Propósito de este documento:** ser el plan rector ejecutable de la versión robusta de **SIEP — Sistema de Entrenamiento Psicosocial**.
 > Está escrito para que **un agente en frío (sin memoria de la conversación previa) lo pueda aplicar a la perfección**.
 > Contiene todo el contexto del codebase, convenciones, comandos, contratos, criterios de aceptación y orden de ejecución.
 

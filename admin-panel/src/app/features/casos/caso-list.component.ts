@@ -19,8 +19,8 @@ import { Caso } from '../../core/models/caso.model';
   ],
   template: `
     <div class="page-header">
-      <h1 class="page-title">Casos Clínicos</h1>
-      <a mat-flat-button color="primary" routerLink="/casos/nuevo">
+      <h1 class="page-title">Casos psicosociales</h1>
+      <a class="psy-button psy-button--primary" routerLink="/casos/nuevo">
         <mat-icon>add</mat-icon> Nuevo caso
       </a>
     </div>
@@ -64,9 +64,13 @@ import { Caso } from '../../core/models/caso.model';
     </mat-card>
   `,
   styles: [`
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-title { font-size: 24px; font-weight: 700; color: #1A2B3C; margin: 0; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .page-title { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800; color: var(--siep-blue); margin: 0; letter-spacing: 0; }
     .full-width { width: 100%; }
+    @media (max-width: 560px) {
+      .page-header { display: grid; }
+      .page-header .psy-button { width: 100%; }
+    }
   `]
 })
 export class CasoListComponent implements OnInit {

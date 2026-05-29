@@ -49,6 +49,7 @@ public class InstructorSimulationService {
     private final CriterionScoreJpaRepository scoreRepository;
     private final ReflectionCryptoService reflectionCryptoService;
     private final SimulationWorldService worldService;
+    private final AttemptCompletionReportBuilder completionReportBuilder;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -66,9 +67,11 @@ public class InstructorSimulationService {
                 .toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AttemptTrace trace(UUID attemptId) {
         SimulationAttemptEntity attempt = requireAttempt(attemptId);
+        List<AttemptEventEntity> events = eventRepository.findByAttemptIdOrderByOccurredAt(attemptId);
+        var report = completionReportBuilder.build(attempt, events);
         return new AttemptTrace(
                 attempt.getId(),
                 anonymize(attempt),
@@ -76,7 +79,15 @@ public class InstructorSimulationService {
                 attempt.getStatus().name(),
                 attempt.getAccumulatedScore(),
                 attempt.getStressIndex(),
-                eventRepository.findByAttemptIdOrderByOccurredAt(attemptId).stream().map(this::toTraceEvent).toList(),
+                completionReportBuilder.toMetrics(attempt),
+                attempt.getStartedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                attempt.getEndedAt() == null ? null : attempt.getEndedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                report.adequateDecisions(),
+                report.riskyDecisions(),
+                report.inadequateDecisions(),
+                report.prohibitedDecisions(),
+                report.safeExitUsed(),
+                events.stream().map(this::toTraceEvent).toList(),
                 worldService.worldForAttempt(attempt),
                 reflectionRepository.findByAttemptId(attemptId).stream()
                         .map(reflection -> new ReflectionTrace(
@@ -166,8 +177,12 @@ public class InstructorSimulationService {
     }
 
     private TraceEvent toTraceEvent(AttemptEventEntity event) {
+        String classification = event.getDecisionOption() == null
+                ? null
+                : event.getDecisionOption().getClassification().name();
         return new TraceEvent(
                 event.getEventType().name(),
+                classification,
                 event.getNode() == null ? null : event.getNode().getTitle(),
                 event.getDecisionOption() == null ? null : event.getDecisionOption().getText(),
                 event.getScoreDelta(),

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,12 +8,14 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
+import { APP_BRAND } from '../../core/config/brand.config';
 
 interface NavItem {
   label: string;
   icon: string;
   route: string;
   caption: string;
+  roles: string[];
 }
 
 /** Returns true when the given URL is an active simulation play route. */
@@ -41,14 +43,14 @@ export function isGameRoute(url: string): boolean {
           <a class="portal-brand" routerLink="/portal/dashboard" aria-label="Ir al dashboard">
             <img class="portal-brand__logo" src="/assets/images/institution/logo-cue-ccaq-vertical.webp" alt="CUE Alexander Von Humboldt" width="82" height="41">
             <span>
-              <strong>PsychoSim</strong>
-              <small>Psicología Humboldt</small>
+              <strong>{{ brand.shortName }}</strong>
+              <small>{{ brand.fullName }}</small>
             </span>
           </a>
         </div>
 
         <mat-nav-list aria-label="Navegación del portal">
-          @for (item of navItems; track item.route) {
+          @for (item of visibleNavItems(); track item.route) {
             <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link" (click)="closeMobileNav()">
               <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
               <span matListItemTitle>{{ item.label }}</span>
@@ -64,13 +66,13 @@ export function isGameRoute(url: string): boolean {
             <mat-icon>menu</mat-icon>
           </button>
           <div>
-            <p class="topbar-kicker">Portal académico</p>
+            <p class="topbar-kicker">{{ brand.shortName }} · Portal académico</p>
             <h1>{{ currentSection() }}</h1>
           </div>
           <span class="topbar-spacer"></span>
           <div class="user-pill">
             <mat-icon>account_circle</mat-icon>
-            <span>{{ currentUserEmail() }}</span>
+            <span>{{ currentUserLabel() }}</span>
           </div>
           <button class="psy-icon-button" type="button" aria-label="Cerrar sesión" (click)="auth.logout()">
             <mat-icon>logout</mat-icon>
@@ -147,7 +149,7 @@ export function isGameRoute(url: string): boolean {
     }
     .topbar-kicker {
       margin: 0;
-      color: var(--psy-teal-deep);
+      color: var(--siep-blue-soft);
       font-size: .72rem;
       font-weight: 800;
       letter-spacing: .12em;
@@ -155,8 +157,9 @@ export function isGameRoute(url: string): boolean {
     }
     .portal-topbar h1 {
       margin: 2px 0 0;
-      color: var(--psy-ink);
+      color: var(--siep-blue);
       font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.2;
     }
     .topbar-spacer { flex: 1; }
@@ -195,6 +198,7 @@ export function isGameRoute(url: string): boolean {
   `]
 })
 export class ShellComponent implements OnDestroy {
+  readonly brand = APP_BRAND;
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -203,13 +207,19 @@ export class ShellComponent implements OnDestroy {
   readonly inGameMode = signal(false);
 
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard',  icon: 'dashboard',    route: '/portal/dashboard',             caption: 'Métricas y seguimiento' },
-    { label: 'Simulador',  icon: 'play_circle',  route: '/portal/simulador',             caption: 'Juego de casos' },
-    { label: 'Casos',      icon: 'account_tree', route: '/portal/casos',                 caption: 'Catálogo y versiones' },
-    { label: 'Docente',    icon: 'timeline',     route: '/portal/docente/trazabilidad',  caption: 'Trazabilidad y rúbricas' },
-    { label: 'Grupos',     icon: 'groups',       route: '/portal/grupos',                caption: 'Cohortes académicas' },
-    { label: 'Reportes',   icon: 'analytics',    route: '/portal/reportes',              caption: 'Analíticas formativas' }
+    { label: 'Dashboard',  icon: 'dashboard',    route: '/portal/dashboard',             caption: 'Seguimiento formativo', roles: ['ESTUDIANTE', 'PROFESOR', 'ADMIN'] },
+    { label: 'Simulador',  icon: 'play_circle',  route: '/portal/simulador',             caption: 'Simulación formativa', roles: ['ESTUDIANTE', 'PROFESOR', 'ADMIN'] },
+    { label: 'Casos',      icon: 'account_tree', route: '/portal/casos',                 caption: 'Catálogo y versiones', roles: ['PROFESOR', 'ADMIN'] },
+    { label: 'Docente',    icon: 'timeline',     route: '/portal/docente/trazabilidad',  caption: 'Trazabilidad y rúbricas', roles: ['PROFESOR', 'ADMIN'] },
+    { label: 'Grupos',     icon: 'groups',       route: '/portal/grupos',                caption: 'Cohortes académicas', roles: ['PROFESOR', 'ADMIN'] },
+    { label: 'Reportes',   icon: 'analytics',    route: '/portal/reportes',              caption: 'Evaluación por rúbricas', roles: ['PROFESOR', 'ADMIN'] }
   ];
+
+  readonly visibleNavItems = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    if (!role) return this.navItems;
+    return this.navItems.filter(item => item.roles.includes(role));
+  });
 
   private readonly routerSub: Subscription;
 
@@ -243,11 +253,11 @@ export class ShellComponent implements OnDestroy {
     if (this.compactNav()) this.drawerOpen.set(false);
   }
 
-  currentUserEmail() {
-    return this.auth.currentUser()?.email ?? 'usuario institucional';
+  currentUserLabel() {
+    return this.auth.currentUser()?.role ? 'Cuenta institucional' : 'Usuario institucional';
   }
 
   currentSection() {
-    return 'Simulación, evaluación y acompañamiento';
+    return this.brand.subtitle;
   }
 }
