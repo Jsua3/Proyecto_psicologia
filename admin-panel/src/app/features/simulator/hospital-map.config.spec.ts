@@ -13,6 +13,8 @@ describe('hospital-map.config', () => {
 
   it('maps backend labels to academic display labels', () => {
     expect(getDisplayLabel({ key: 'tool-pap', label: 'PAP' })).toBe('Primeros Auxilios Psicológicos');
+    expect(getDisplayLabel({ key: 'cuestionario-prematuro', label: 'Cuestionario prematuro' }))
+      .toBe('Área médica restringida');
     expect(getDisplayLabel({ key: 'aviso-policial', label: 'Aviso policial' })).toBe('Ruta de atención VBG');
   });
 

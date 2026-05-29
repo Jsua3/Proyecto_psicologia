@@ -17,12 +17,17 @@ import { ToolInventoryComponent } from './tool-inventory.component';
 import { AudioService } from './audio.service';
 import {
   PROTOCOL_INFO_MESSAGE,
-  RESTRICTED_AREA_BLOCK_MESSAGE,
-  getDisplayLabel,
-  getInteractionDescription,
-  isAmbientInteraction,
-  isRestrictedAreaInteraction,
 } from './hospital-map.config';
+import { COMISARIA_AMBIENT_INFO } from './comisaria-map.config';
+import {
+  getRiskyInteractionDef,
+  isRiskyInteraction,
+} from './risky-interaction.config';
+import {
+  getSceneDisplayLabel,
+  getSceneInteractionDescription,
+  isSceneAmbientInteraction,
+} from './scene-map-display.util';
 
 @Component({
   selector: 'app-simulation-play',
@@ -86,7 +91,8 @@ import {
           <div class="world-skeleton" aria-label="Cargando mapa"></div>
         }
 
-        <app-simulation-hud class="hud-layer" [attempt]="game" [stressPulse]="stressPulse()" />
+        <app-simulation-hud class="hud-layer" [attempt]="game" [stressPulse]="stressPulse()"
+          [nearbyInteractionKey]="nearbyInteraction()?.key ?? null" />
         <app-minimap class="minimap-layer"
           [stages]="minimapStages()"
           [currentNodeKey]="game.currentNode.key"
@@ -124,7 +130,8 @@ import {
         <div class="controls-hint" aria-hidden="true">Mover: WASD/flechas · E decisión o interacción · J bitácora reflexiva · Esc salida segura</div>
 
         <app-dialogue-panel class="dialogue-layer" [dialogue]="dialogue()" [interaction]="selectedInteraction()"
-          (close)="closeDialogue()" (execute)="executeDecision($event)" (useTool)="useTool($event)" />
+          (close)="closeDialogue()" (execute)="executeDecision($event)" (useTool)="useTool($event)"
+          (frontendChoice)="handleFrontendChoice($event)" />
 
         <div class="stress-vignette" [class.vignette--active]="stressVignetteLevel() > 0"
           [style.--vignette-opacity]="stressVignetteLevel()" aria-hidden="true"></div>
@@ -368,6 +375,7 @@ export class SimulationPlayComponent implements OnInit {
   readonly journalMessage      = signal('');
   readonly journalSaveState    = signal<JournalSaveState>('idle');
   readonly nearbyInteraction   = signal<MapObjectState | null>(null);
+  private readonly pendingRestrictedInteraction = signal<MapObjectState | null>(null);
   readonly selectedInteraction = signal<MapObjectState | null>(null);
   readonly dialogue    = signal<DialogueState | null>(null);
   readonly stressPulse = signal(false);
@@ -479,15 +487,46 @@ export class SimulationPlayComponent implements OnInit {
     const game = this.attempt();
     if (!game || game.status !== 'IN_PROGRESS') return;
 
-    if (isAmbientInteraction(interaction.key)) {
+    if (isSceneAmbientInteraction(interaction.key)) {
       this.showAmbientDialogue(interaction);
       return;
     }
 
-    if (isRestrictedAreaInteraction(interaction.key)) {
-      this.showRestrictedAreaBlock(interaction);
+    if (isRiskyInteraction(interaction.key)) {
+      this.showRiskyActionWarning(interaction);
       return;
     }
+
+    this.openBackendInteraction(interaction);
+  }
+
+  handleFrontendChoice(key: string) {
+    if (key === 'frontend:cancel-restricted') {
+      this.pendingRestrictedInteraction.set(null);
+      this.closeDialogue();
+      return;
+    }
+    if (key === 'frontend:proceed-restricted') {
+      const interaction = this.pendingRestrictedInteraction();
+      this.pendingRestrictedInteraction.set(null);
+      this.dialogue.set(null);
+      if (interaction) this.openBackendInteraction(interaction);
+    }
+  }
+
+  proximityLabel(obj: MapObjectState): string {
+    const mapKey = this.world()?.map.key;
+    if (obj.type === 'EXIT') return `${getSceneDisplayLabel(obj, mapKey)} →`;
+    return getSceneDisplayLabel(obj, mapKey);
+  }
+
+  proximityDescription(obj: MapObjectState): string {
+    return getSceneInteractionDescription(obj, this.world()?.map.key);
+  }
+
+  private openBackendInteraction(interaction: MapObjectState) {
+    const game = this.attempt();
+    if (!game || game.status !== 'IN_PROGRESS') return;
 
     this.selectedInteraction.set(interaction);
     this.gameWorld?.focus(interaction.key);
@@ -503,35 +542,52 @@ export class SimulationPlayComponent implements OnInit {
     });
   }
 
-  proximityLabel(obj: MapObjectState): string {
-    if (obj.type === 'EXIT') return `${getDisplayLabel(obj)} →`;
-    return getDisplayLabel(obj);
-  }
+  private showRiskyActionWarning(interaction: MapObjectState) {
+    const def = getRiskyInteractionDef(interaction.key);
+    if (!def) return;
 
-  proximityDescription(obj: MapObjectState): string {
-    return getInteractionDescription(obj);
-  }
-
-  private showRestrictedAreaBlock(interaction: MapObjectState) {
+    this.pendingRestrictedInteraction.set(interaction);
     this.selectedInteraction.set(interaction);
     this.gameWorld?.focus(interaction.key);
     this.dialogue.set({
-      key: 'hospital-restricted-area',
-      speakerName: 'Protocolo clínico',
-      portraitKey: 'block',
+      key: `risky-warning-${interaction.key}`,
+      speakerName: def.speakerName,
+      portraitKey: def.portraitKey,
       emotion: 'concerned',
       lines: [{
         order: 1,
-        speakerName: 'Protocolo clínico',
-        text: RESTRICTED_AREA_BLOCK_MESSAGE,
+        speakerName: def.speakerName,
+        text: def.warningMessage,
         emotion: 'concerned',
       }],
-      choices: [],
+      choices: [
+        {
+          key: 'frontend:cancel-restricted',
+          text: 'Cancelar',
+          decisionOptionId: null,
+          requiredToolCode: null,
+          effect: {},
+          isRecommended: true,
+        },
+        {
+          key: 'frontend:proceed-restricted',
+          text: 'Continuar bajo riesgo',
+          decisionOptionId: null,
+          requiredToolCode: null,
+          effect: {},
+          isProhibited: true,
+        },
+      ],
     });
   }
 
   private showAmbientDialogue(interaction: MapObjectState) {
     this.selectedInteraction.set(interaction);
+    const mapKey = this.world()?.map.key;
+    const text = interaction.key === 'ambient:protocolo-noticia-dificil'
+      ? PROTOCOL_INFO_MESSAGE
+      : COMISARIA_AMBIENT_INFO[interaction.key]
+        ?? getSceneInteractionDescription(interaction, mapKey);
     this.dialogue.set({
       key: interaction.key,
       speakerName: interaction.label,
@@ -540,9 +596,7 @@ export class SimulationPlayComponent implements OnInit {
       lines: [{
         order: 1,
         speakerName: interaction.label,
-        text: interaction.key === 'ambient:protocolo-noticia-dificil'
-          ? PROTOCOL_INFO_MESSAGE
-          : getInteractionDescription(interaction),
+        text,
         emotion: 'neutral',
       }],
       choices: [],

@@ -208,6 +208,7 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
   readonly close   = output<void>();
   readonly execute = output<number>();
   readonly useTool = output<string>();
+  readonly frontendChoice = output<string>();
 
   @ViewChild('dialogueBox') private dialogueBox?: ElementRef<HTMLDivElement>;
 
@@ -255,6 +256,8 @@ export class DialoguePanelComponent implements AfterViewChecked, OnDestroy {
       this.execute.emit(choice.decisionOptionId);
     } else if (choice.requiredToolCode != null) {
       this.useTool.emit(choice.requiredToolCode);
+    } else if (choice.key.startsWith('frontend:')) {
+      this.frontendChoice.emit(choice.key);
     }
   }
 

@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { SimulationAttemptState } from '../../core/models/simulation.model';
-import { HOSPITAL_NODE_KEY, HOSPITAL_SCENE_OBJECTIVE } from './hospital-map.config';
+import { getSceneObjective, getSceneProgress } from './scene-objectives.config';
+import { getProximityStepHint } from './risky-interaction.config';
 
 type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
 
@@ -40,6 +41,13 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
           <mat-icon aria-hidden="true">location_on</mat-icon>
           <span>{{ game.currentNode.title }}</span>
         </div>
+
+        @if (sceneProgress(); as progress) {
+          <div class="hud-step" aria-label="{{ progress.stepLabel }}">
+            <mat-icon aria-hidden="true">timeline</mat-icon>
+            <span>{{ progress.stepLabel }}@if (progress.step > 0) { ({{ progress.step }}/{{ progress.total }}) }</span>
+          </div>
+        }
 
         @if (sceneObjective(); as objective) {
           <div class="hud-objective" role="status" aria-label="Objetivo actual: {{ objective }}">
@@ -136,6 +144,29 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
       color: rgba(232,240,244,.65);
     }
 
+    .hud-step {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(79,122,172,.1);
+      border: 1px solid rgba(79,122,172,.2);
+    }
+    .hud-step mat-icon {
+      color: rgba(157,192,232,.85);
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .hud-step span {
+      font-size: .68rem;
+      font-weight: 700;
+      color: rgba(157,192,232,.85);
+      white-space: nowrap;
+    }
+
     .hud-objective {
       display: flex;
       align-items: center;
@@ -199,6 +230,7 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
 
     @media (max-width: 640px) {
       .hud-scene { display: none; }
+      .hud-step span { white-space: normal; line-height: 1.2; max-width: 120px; }
       .hud-objective span { white-space: normal; line-height: 1.25; }
       .hud-label { display: none; }
       .hud-stress { flex: 0 0 120px; }
@@ -213,6 +245,7 @@ type StressTier = 'calm' | 'moderate' | 'high' | 'critical';
 export class SimulationHudComponent {
   readonly attempt = input<SimulationAttemptState | null>(null);
   readonly stressPulse = input(false);
+  readonly nearbyInteractionKey = input<string | null>(null);
 
   readonly stressTier = computed<StressTier>(() => {
     const s = this.attempt()?.stressIndex ?? 0;
@@ -245,8 +278,16 @@ export class SimulationHudComponent {
 
   readonly sceneObjective = computed(() => {
     const nodeKey = this.attempt()?.currentNode.key;
-    if (nodeKey === HOSPITAL_NODE_KEY) return HOSPITAL_SCENE_OBJECTIVE;
-    return null;
+    return getSceneObjective(nodeKey);
+  });
+
+  readonly sceneProgress = computed(() => {
+    const proximityLabel = getProximityStepHint(this.nearbyInteractionKey());
+    if (proximityLabel) {
+      return { stepLabel: proximityLabel, step: 0, total: 6 };
+    }
+    const nodeKey = this.attempt()?.currentNode.key;
+    return getSceneProgress(nodeKey);
   });
 
   statusLabel(status: SimulationAttemptState['status']) {

@@ -13,7 +13,7 @@ export const HOSPITAL_SCENE_OBJECTIVE =
 /** Frontend display labels — backend keys remain stable. */
 export const INTERACTION_LABELS: Record<string, string> = {
   'escucha-segura': 'Iniciar escucha segura',
-  'cuestionario-prematuro': 'Acción riesgosa: interrogatorio prematuro',
+  'cuestionario-prematuro': 'Área médica restringida',
   'aviso-policial': 'Ruta de atención VBG',
   'tool-pap': 'Primeros Auxilios Psicológicos',
   'tool-bitacora': 'Bitácora reflexiva',
@@ -51,6 +51,10 @@ export const INTERACTION_DESCRIPTIONS: Record<string, string> = {
   'Acción riesgosa: interrogatorio prematuro':
     'Esta acción puede aumentar la revictimización o interferir con la atención médica prioritaria.',
 };
+
+/** Warning shown before allowing a risky backend interaction. */
+export const RESTRICTED_AREA_WARNING_MESSAGE =
+  'Acción sensible: la sobreviviente está en atención médica crítica. Interrogarla ahora puede aumentar revictimización. ¿Deseas continuar?';
 
 /** Pedagogical block when interacting with the restricted clinical area. */
 export const RESTRICTED_AREA_BLOCK_MESSAGE =
@@ -138,6 +142,8 @@ export function getInteractionDescription(
 export function isRestrictedAreaInteraction(key: string): boolean {
   return key === 'cuestionario-prematuro';
 }
+
+/** @deprecated Prefer isRiskyInteraction from risky-interaction.config.ts */
 
 export function isAmbientInteraction(key: string): boolean {
   return key.startsWith('ambient:');

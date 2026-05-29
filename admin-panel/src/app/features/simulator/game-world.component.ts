@@ -5,14 +5,21 @@ import Phaser from 'phaser';
 import { CollisionZoneState, MapObjectState, SimulationWorldState } from '../../core/models/simulation.model';
 import { KenneyCharFrames, KenneyDungeonFrames } from './kenney-frames.constants';
 import {
-  HOSPITAL_AMBIENT_ZONES,
   HOSPITAL_COLLISIONS,
   HOSPITAL_ZONES,
-  applyHospitalDisplayLabels,
-  buildAmbientObject,
-  getDisplayLabel,
   isHospitalMap,
 } from './hospital-map.config';
+import {
+  COMISARIA_COLLISIONS,
+  COMISARIA_ZONES,
+  isComisariaMap,
+} from './comisaria-map.config';
+import {
+  applySceneDisplayLabels,
+  buildSceneAmbientObject,
+  getSceneAmbientZones,
+  getSceneDisplayLabel,
+} from './scene-map-display.util';
 
 interface WorldCallbacks {
   onProximity: (obj: MapObjectState | null) => void;
@@ -230,9 +237,17 @@ class DataDrivenWorldScene extends Phaser.Scene {
         fontFamily: 'Arial, sans-serif', fontSize: '11px', color: 'rgba(157,192,232,.72)',
       }).setDepth(6);
     }
+    if (isComisariaMap(mapKey)) {
+      this.add.text(56, 66, 'Comisaría — Restablecimiento de derechos', {
+        fontFamily: 'Arial, sans-serif', fontSize: '11px', color: 'rgba(157,192,232,.72)',
+      }).setDepth(6);
+    }
 
     if (isHospitalMap(mapKey)) {
       this.renderHospitalEnvironment();
+    }
+    if (isComisariaMap(mapKey)) {
+      this.renderComisariaEnvironment();
     }
 
     // Merge Tiled object positions with backend objects.
@@ -241,8 +256,8 @@ class DataDrivenWorldScene extends Phaser.Scene {
       const t = tiledObjects.find(o => o.name === obj.key);
       return (t?.x != null && t?.y != null) ? { ...obj, x: t.x, y: t.y } : obj;
     });
-    if (isHospitalMap(mapKey)) {
-      mergedObjects = applyHospitalDisplayLabels(mergedObjects);
+    if (isHospitalMap(mapKey) || isComisariaMap(mapKey)) {
+      mergedObjects = applySceneDisplayLabels(mergedObjects, mapKey);
     }
 
     mergedObjects.forEach(obj => this.createMarker(obj));
@@ -326,6 +341,83 @@ class DataDrivenWorldScene extends Phaser.Scene {
     }
   }
 
+  private renderComisariaEnvironment() {
+    const g = this.add.graphics().setDepth(3.5);
+
+    COMISARIA_ZONES.forEach(zone => {
+      const cx = zone.x + zone.width / 2;
+      const cy = zone.y + zone.height / 2;
+      this.add.rectangle(cx, cy, zone.width, zone.height, zone.tint, zone.alpha)
+        .setStrokeStyle(1, 0x5b4f8f, 0.38)
+        .setDepth(3.5);
+      this.add.text(zone.x + 8, zone.y + 6, zone.label, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '10px',
+        color: '#b8a8e8',
+        fontStyle: 'bold',
+        backgroundColor: 'rgba(8,12,18,.78)',
+        padding: { x: 5, y: 3 },
+      }).setDepth(4);
+    });
+
+    g.lineStyle(2, 0x5b4f8f, 0.45);
+    g.lineBetween(364, 44, 364, 496);
+    g.lineBetween(624, 44, 624, 496);
+    g.lineBetween(640, 190, 910, 190);
+    g.lineBetween(640, 330, 910, 330);
+    g.lineStyle(2, 0xa85062, 0.55);
+    g.strokeRect(640, 48, 270, 140);
+
+    this.add.text(72, 392, 'COMISARÍA DE FAMILIA', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '12px',
+      color: '#e8f0f4',
+      fontStyle: 'bold',
+      backgroundColor: 'rgba(91,79,143,.82)',
+      padding: { x: 8, y: 4 },
+    }).setDepth(6);
+
+    if (this.assetsLoaded && this.textures.exists('characters')) {
+      this.add.sprite(180, 220, 'characters', KenneyCharFrames.NPC_PATIENT_IDLE)
+        .setScale(2).setDepth(8).setTint(0xffd4c0);
+      this.add.text(180, 248, 'Sobreviviente', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#ffd4c0',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+
+      this.add.sprite(280, 200, 'characters', KenneyCharFrames.PLAYER_IDLE)
+        .setScale(1.9).setDepth(8).setTint(0xa8c8ff);
+      this.add.text(280, 228, 'Psicóloga social', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#a8c8ff',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+
+      this.add.sprite(760, 90, 'characters', KenneyCharFrames.NPC_SUPERVISOR_IDLE)
+        .setScale(2).setDepth(8);
+      this.add.text(760, 118, 'Funcionario de derechos', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#9dc0e8',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+
+      this.add.sprite(760, 400, 'characters', KenneyCharFrames.NPC_PATIENT_IDLE)
+        .setScale(1.85).setDepth(8).setTint(0xb8e8c8);
+      this.add.text(760, 428, 'Trabajadora social', {
+        fontFamily: 'Arial, sans-serif', fontSize: '9px', color: '#b8e8c8',
+        backgroundColor: 'rgba(8,12,18,.72)', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0).setDepth(8);
+    }
+
+    if (this.assetsLoaded && this.textures.exists('dungeon-tiles')) {
+      [[120, 400], [160, 400]].forEach(([x, y]) => {
+        this.add.image(x, y, 'dungeon-tiles', KenneyDungeonFrames.DESK).setScale(2).setDepth(7);
+      });
+      [[200, 320], [240, 320]].forEach(([x, y]) => {
+        this.add.image(x, y, 'dungeon-tiles', KenneyDungeonFrames.CHAIR).setScale(2).setDepth(7);
+      });
+      this.add.image(500, 280, 'dungeon-tiles', KenneyDungeonFrames.CABINET).setScale(2).setDepth(7);
+    }
+  }
+
   private renderCollisionZone(zone: CollisionZoneState) {
     const cx = zone.x + zone.width/2;
     const cy = zone.y + zone.height/2;
@@ -361,7 +453,7 @@ class DataDrivenWorldScene extends Phaser.Scene {
   private createMarker(object: MapObjectState) {
     const isExit = object.type === 'EXIT';
     const color  = Number.parseInt(object.color.replace('#', ''), 16) || 0x4fa3a5;
-    const displayLabel = getDisplayLabel(object);
+    const displayLabel = getSceneDisplayLabel(object, this.world?.map.key);
     const label  = this.add.text(0, 28, displayLabel, {
       fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#e8f0f4',
       backgroundColor: 'rgba(8,12,18,.72)', padding: { x:5, y:3 }, align: 'center', wordWrap: { width: 140 }
@@ -432,9 +524,12 @@ class DataDrivenWorldScene extends Phaser.Scene {
   private collides(x: number, y: number): boolean {
     if (!this.world) return false;
     const pb = new Phaser.Geom.Rectangle(x - 15, y - 27, 30, 46);
-    const zones = isHospitalMap(this.world.map.key)
+    const mapKey = this.world.map.key;
+    const zones = isHospitalMap(mapKey)
       ? HOSPITAL_COLLISIONS
-      : this.world.collisions.map(z => ({ x: z.x, y: z.y, width: z.width, height: z.height }));
+      : isComisariaMap(mapKey)
+        ? COMISARIA_COLLISIONS
+        : this.world.collisions.map(z => ({ x: z.x, y: z.y, width: z.width, height: z.height }));
     return zones.some(z =>
       Phaser.Geom.Intersects.RectangleToRectangle(pb, new Phaser.Geom.Rectangle(z.x, z.y, z.width, z.height)));
   }
@@ -442,8 +537,9 @@ class DataDrivenWorldScene extends Phaser.Scene {
   private updateNearestInteraction() {
     if (!this.player || !this.world) return;
 
-    const objects = isHospitalMap(this.world.map.key)
-      ? applyHospitalDisplayLabels(this.world.objects)
+    const mapKey = this.world.map.key;
+    const objects = (isHospitalMap(mapKey) || isComisariaMap(mapKey))
+      ? applySceneDisplayLabels(this.world.objects, mapKey)
       : this.world.objects;
 
     let nearest: MapObjectState | null = null;
@@ -456,11 +552,12 @@ class DataDrivenWorldScene extends Phaser.Scene {
       if (d < nearestD) { nearest = { ...obj, x: ox, y: oy }; nearestD = d; }
     }
 
-    if (isHospitalMap(this.world.map.key) && (!nearest || nearestD > 74)) {
-      for (const zone of HOSPITAL_AMBIENT_ZONES) {
+    const ambientZones = getSceneAmbientZones(mapKey);
+    if (ambientZones.length && (!nearest || nearestD > 74)) {
+      for (const zone of ambientZones) {
         const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, zone.x, zone.y);
         if (d <= zone.radius && d < nearestD) {
-          nearest = buildAmbientObject(zone);
+          nearest = buildSceneAmbientObject(zone, mapKey);
           nearestD = d;
         }
       }
